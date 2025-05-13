@@ -7,12 +7,21 @@ import invoke from "@/util/invoke";
 const Sider = Layout.Sider;
 const MenuItem = Menu.Item;
 
+const pages = {
+    "/json" : "JSON",
+    "/web/qrcode" : "二维码",
+    "/web/tool" : "Web工具"
+}
+
 export default function RootLayout({ children }) {
     const [activeMenuKey, setActiveMenuKey] = useState([]);
     const clickMenuItem = (item) => {
         window.location.href = item;
-        invoke.setWindowTitle(item);
+        invoke.setWindowTitle(pages[item]);
     };
+    useEffect(() => {
+        setActiveMenuKey([window.location.pathname]);
+    }, []);
     return (
         <html lang="en">
             <body>
@@ -36,8 +45,13 @@ export default function RootLayout({ children }) {
                             width="150"
                             selectedKeys={activeMenuKey}
                         >
-                            <MenuItem key="/">Home</MenuItem>
-                            <MenuItem key="/json">JSON</MenuItem>
+                            {
+                                Object.keys(pages).map((key) => {
+                                    return (
+                                        <MenuItem key={key}>{pages[key]}</MenuItem>
+                                    )
+                                })
+                            }
                         </Menu>
                     </Sider>
                     <Layout style={{ marginLeft: "100px", padding: "2px" }}>

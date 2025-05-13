@@ -5,6 +5,12 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "fs:read-all",
+    "fs:write-all",
+    "fs:allow-app-write-recursive",
+    "fs:allow-app-read-recursive",
+    "dialog:allow-message", 
+    "dialog:default"
   ]
 }

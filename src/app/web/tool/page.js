@@ -1,9 +1,8 @@
 'use client'
 import React from 'react';
-import { Button, Input, Grid, Space, Radio } from '@arco-design/web-react';
+import {  Input, Grid, Radio } from '@arco-design/web-react';
 import { Base64 } from 'js-base64';
 import dayjs from 'dayjs'
-import QRCode from 'qrcode.react';
 import cache from "@/util/cache";
 const Row = Grid.Row;
 const Col = Grid.Col;
@@ -18,7 +17,7 @@ class Convert extends React.Component {
         }
     }
     async componentDidMount() {
-        let tool = await cache.get('web-tool-default') || 'qrcode';
+        let tool = await cache.get('web-tool-default') || 'base64_decode';
         let input = await cache.get('web-tool-default-input') || '';
         this.setState({
             tool: tool,
@@ -34,11 +33,11 @@ class Convert extends React.Component {
         cache.set('web-tool-default-input', value)
     }
 
-
     handle = async () => {
         let {input, tool} = this.state
         let output = ""
         let displayQRCode = false
+        console.log(input, tool, 'handle')
         switch (tool) {
             case "base64_decode":
                 output = Base64.decode(input)
@@ -58,13 +57,8 @@ class Convert extends React.Component {
             case "now_timestamp":
                 output = '' + dayjs().unix()
                 break
-            case "qrcode":
-                output = input
-                displayQRCode = true
-                break
         }
         this.setState({
-            displayQRCode: displayQRCode,
             output: output,
         })
     }
@@ -77,10 +71,9 @@ class Convert extends React.Component {
                     </Col>
                 </Row>
 
-                <RadioGroup defaultValue='qrcode' style={{ marginBottom: 20, marginTop: 20 }} value={this.state.tool} onChange={
+                <RadioGroup defaultValue='base64_decode' style={{ marginBottom: 20, marginTop: 20 }} value={this.state.tool} onChange={
                     this.handleToolChange
                 }>
-                    <Radio value='qrcode'>二维码</Radio>
                     <Radio value='urldecode'>UrlDecode</Radio>
                     <Radio value='urlencode'>UrlEncode</Radio>
                     <Radio value='base64_decode'>Base64Decode</Radio>
@@ -88,23 +81,12 @@ class Convert extends React.Component {
                     <Radio value='now_timestamp'>当前时间戳</Radio>
                     <Radio value='formate_time'>格式化时间戳</Radio>
                 </RadioGroup>
-
-                {
-                    this.state.displayQRCode ? <div style={{ margin: '20px auto', textAlign: 'center' }}>
-                        <QRCode
-                            value={this.state.input}
-                            size={300} // 二维码的大小
-                            fgColor="#000000" // 二维码的颜色
-                        />
-                    </div> : <Row style={{ marginTop: '20px' }}>
-                        <Col span={24}>
-                            <Input.TextArea rows={5} value={this.state.output}></Input.TextArea>
-                        </Col>
-                    </Row>
-                }
-
+                <Row style={{ marginTop: '20px' }}>
+                    <Col span={24}>
+                        <Input.TextArea rows={5} value={this.state.output}></Input.TextArea>
+                    </Col>
+                </Row>
             </div>
-
         );
     }
 }
