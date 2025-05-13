@@ -15,8 +15,7 @@ use rust_box::tauri_command::file::{
     rename_file, write_file, write_media_file,
 };
 use rust_box::tauri_command::js::run_js_code;
-use tauri::{Window};
-
+use tauri::{Window, Manager};
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
