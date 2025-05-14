@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import "@arco-design/web-react/dist/css/arco.css";
 import { Layout, Menu } from "@arco-design/web-react";
 import invoke from "@/util/invoke";
+import cache from "@/util/cache";
 const Sider = Layout.Sider;
 const MenuItem = Menu.Item;
 
@@ -13,6 +14,7 @@ const pages = {
     "/web/tool" : "Web工具"
 }
 
+
 export default function RootLayout({ children }) {
     const [activeMenuKey, setActiveMenuKey] = useState([]);
     const clickMenuItem = (item) => {
@@ -21,6 +23,7 @@ export default function RootLayout({ children }) {
     };
     useEffect(() => {
         setActiveMenuKey([window.location.pathname]);
+        cache.writeFile("last-page", window.location.pathname)
     }, []);
     return (
         <html lang="en">

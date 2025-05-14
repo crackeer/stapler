@@ -1,20 +1,15 @@
 "use client";
 import React from "react";
 import { useEffect } from "react";
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import cache from "@/util/cache";
 export default function Home() {
 
+    async function redirect() {
+        let lastPage = await cache.readFile("last-page") || "/web/qrcode";
+        window.location.href = lastPage
+    }
     useEffect(() => {
-        async function handleInitialized() {
-            const unlisten = await WebviewWindow.getCurrent().once('initialized', (event) => {
-                console.log(`Webview initialized!`);
-            });
-        }
-        handleInitialized(null);
+        redirect()
     }, []);
-    return (
-        <div>
-            <h1>Hello World</h1>
-        </div>
-    );
+    return null
 }
