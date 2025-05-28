@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@arco-design/web-react": "^2.66.1",
+    "@bytemd/plugin-frontmatter": "^1.22.0",
+    "@bytemd/plugin-gfm": "^1.22.0",
+    "@bytemd/plugin-mermaid": "^1.22.0",
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-clipboard-manager": "^2.2.2",
     "@tauri-apps/plugin-dialog": "^2.2.1",

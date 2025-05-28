@@ -72,7 +72,7 @@ class App extends React.Component {
         });
         if (file == null) return;
         await invoke.writeFile(file, JSON.stringify(this.editor.get()));
-       alert("保存成功");
+        alert("保存成功");
     };
 
     loadJSON = async () => {

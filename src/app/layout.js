@@ -11,9 +11,8 @@ const MenuItem = Menu.Item;
 const pages = {
     "/json" : "JSON",
     "/web/qrcode" : "二维码",
-    "/web/tool" : "Web工具"
+    "/web/tool" : "Web工具",
 }
-
 
 export default function RootLayout({ children }) {
     const [activeMenuKey, setActiveMenuKey] = useState([]);
