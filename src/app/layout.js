@@ -12,6 +12,7 @@ const pages = {
     "/json" : "JSON",
     "/web/qrcode" : "二维码",
     "/web/tool" : "Web工具",
+    "/request" : "请求",
 }
 
 export default function RootLayout({ children }) {
@@ -56,7 +57,7 @@ export default function RootLayout({ children }) {
                             }
                         </Menu>
                     </Sider>
-                    <Layout style={{ marginLeft: "100px", padding: "2px" }}>
+                    <Layout style={{ marginLeft: "100px", padding: "8px" }}>
                         {children}
                     </Layout>
                 </Layout>
