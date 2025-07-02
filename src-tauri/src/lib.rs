@@ -16,6 +16,7 @@ use rust_box::tauri_command::file::{
 };
 use rust_box::tauri_command::js::run_js_code;
 use tauri::{Window, Manager};
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -30,7 +31,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:json.db", get_sqlite_migrations()).build())
         .invoke_handler(tauri::generate_handler![
-            greet,
+            connect_ftp,
             get_file_content,
             write_file,
             list_folder,
