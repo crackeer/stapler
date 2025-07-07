@@ -8,7 +8,7 @@ use rust_box::tauri::command::ssh::{
 use rust_box::tauri::command::{
     http_request::{do_http_request, parse_github_ip, parse_html_title, parse_js_code},
     http_server::{start_static_server, static_server_status, stop_static_server},
-    ftp::connect_ftp,
+    ftp::{connect_ftp, ftp_list}, 
 };
 
 use rust_box::tauri::command::file::{
@@ -32,7 +32,6 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:json.db", get_sqlite_migrations()).build())
         .invoke_handler(tauri::generate_handler![
-            connect_ftp,
             get_file_content,
             write_file,
             list_folder,
@@ -56,7 +55,9 @@ pub fn run() {
             do_http_request,
             get_local_addr,
             parse_github_ip,
-            run_js_code
+            run_js_code,
+            connect_ftp,
+            ftp_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

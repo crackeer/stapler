@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useEffect, useState } from "react";
+import { message } from '@tauri-apps/plugin-dialog';
 import {
     Upload,
     Button,
@@ -14,7 +15,8 @@ import '@arco-design/web-react/es/_util/react-19-adapter';
 import invoke from "@/util/invoke";
 
 const FtpPage = () => {
-    const [currentDir, setCurrentDir] = useState("/");
+    const [connectKey, setConnectKey] = useState('');
+    const [currentDir, setCurrentDir] = useState(".");
     const [files, setFiles] = useState([
         { name: "documents", type: "directory" },
         { name: "image.jpg", type: "file", size: "2.3MB" },
@@ -27,9 +29,6 @@ const FtpPage = () => {
 
     const connectFTPServer = async () => {
         try {
-            Message.loading({
-                content: "连接中...",
-            })
             const values = await form.validate();
             let result = await invoke.connectFTPServer(
                 values.host,
@@ -37,12 +36,21 @@ const FtpPage = () => {
                 values.username,
                 values.password
             )
-            console.log(result)
+            setConnectKey(result)
+            refreshFiles(result)
         } catch (e) {
             console.log("Error", typeof e)
-            Message.error(e)
+            message(e, { title: 'Tauri', kind: 'error' });
         }
     };
+    const refreshFiles = async (key) => {
+        console.log("key", key)
+        if (key === '') {
+            return
+        }
+        let files = await invoke.listFTPFiles(key, currentDir);
+        console.log(files)
+    }
 
     return (
         <>

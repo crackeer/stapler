@@ -221,10 +221,18 @@ var connectFTPServer = async (host, port, username, password) => {
     })
 }
 
+var listFTPFiles = async (connectKey, path) => {
+    console.log(connectKey, path)
+    return await invoke('ftp_list', {
+        key : connectKey,
+        path : path
+    })
+}
+
 export {
-    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer
+    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer, listFTPFiles
 }
 
 export default {
-    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer
+    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer, listFTPFiles
 }
