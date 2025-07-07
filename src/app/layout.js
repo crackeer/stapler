@@ -1,8 +1,10 @@
 "use client";
+import '@arco-design/web-react/es/_util/react-19-adapter';
 import React, { useState, useEffect } from "react";
 import "@/styles/globals.css";
 import "@arco-design/web-react/dist/css/arco.css";
 import { Layout, Menu } from "@arco-design/web-react";
+
 import invoke from "@/util/invoke";
 import cache from "@/util/cache";
 const Sider = Layout.Sider;
@@ -13,6 +15,7 @@ const pages = {
     "/web/qrcode" : "二维码",
     "/web/tool" : "Web工具",
     "/request" : "请求",
+    "/ftp" : "FTP"
 }
 
 export default function RootLayout({ children }) {

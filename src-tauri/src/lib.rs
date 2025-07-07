@@ -1,21 +1,22 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
 #[macro_use]
 extern crate rust_box;
-use rust_box::tauri_command::network::get_local_addr;
-use rust_box::tauri_command::ssh::{
+use rust_box::tauri::command::network::get_local_addr;
+use rust_box::tauri::command::ssh::{
     download_remote_file, remote_exec_command, remote_list_files, upload_remote_file,
 };
-use rust_box::tauri_command::{
+use rust_box::tauri::command::{
     http_request::{do_http_request, parse_github_ip, parse_html_title, parse_js_code},
     http_server::{start_static_server, static_server_status, stop_static_server},
+    ftp::connect_ftp,
 };
 
-use rust_box::tauri_command::file::{
+use rust_box::tauri::command::file::{
     create_dir, create_file, delete_dir, delete_file, file_exists, get_file_content, list_folder,
     rename_file, write_file, write_media_file,
 };
-use rust_box::tauri_command::js::run_js_code;
-use tauri::{Window, Manager};
+use rust_box::tauri::command::js::run_js_code;
+use tauri::{Window};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
