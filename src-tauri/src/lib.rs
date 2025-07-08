@@ -6,7 +6,7 @@ use rust_box::tauri::command::ssh::{
     download_remote_file, remote_exec_command, remote_list_files, upload_remote_file,
 };
 use rust_box::tauri::command::{
-    http_request::{do_http_request, parse_github_ip, parse_html_title, parse_js_code},
+    http_request::{do_http_request, parse_github_ip, parse_html_title, parse_js_code, http_download_file, http_download_file_v2},
     http_server::{start_static_server, static_server_status, stop_static_server},
     ftp::{connect_ftp, ftp_list}, 
 };
@@ -18,10 +18,6 @@ use rust_box::tauri::command::file::{
 use rust_box::tauri::command::js::run_js_code;
 use tauri::{Window};
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -57,7 +53,9 @@ pub fn run() {
             parse_github_ip,
             run_js_code,
             connect_ftp,
-            ftp_list
+            ftp_list,
+            http_download_file,
+            http_download_file_v2
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
