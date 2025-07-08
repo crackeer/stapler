@@ -222,17 +222,23 @@ var connectFTPServer = async (host, port, username, password) => {
 }
 
 var listFTPFiles = async (connectKey, path) => {
-    console.log(connectKey, path)
     return await invoke('ftp_list', {
         key : connectKey,
         path : path
     })
 }
 
+var httpDownloadFile = async (url, dest) => {
+    return await invoke('http_download_file', {
+        url : url,
+        savePath : dest,
+    })
+}
+
 export {
-    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer, listFTPFiles
+    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer, listFTPFiles, httpDownloadFile
 }
 
 export default {
-    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer, listFTPFiles
+    writeFile, readFile, readDir, simpleReadDir, setWindowTitle, uploadFile, createFile, createDir, deleteFile, deleteFolder, renameFile, fileExists, addDownloadWorkTask, queryDownloadTask, addProjectDownload, queryProjectDownloadTask, parseJSCode, parseHTMLTitle, getLocalConfig, updateOuterHost, listFiles, downloadRemoteFile, uploadRemoteFile, deleteRemoteFile, newRemoteDirectory, startHTTPServer, stopHTTPServer, httpServerStatus, getLocalAddr, runJsCode, connectFTPServer, listFTPFiles, httpDownloadFile
 }

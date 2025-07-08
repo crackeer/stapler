@@ -16,7 +16,7 @@ const pages = {
     "/web/tool" : "Web工具",
     "/request" : "请求",
     "/ftp" : "FTP",
-    "/cube" : "Cube下载",
+    "/work" : "VR下载",
 }
 
 export default function RootLayout({ children }) {

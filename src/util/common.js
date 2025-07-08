@@ -106,10 +106,14 @@ function convertDBTime2Unix(dbTime) {
 }
 
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 export default {
-    sortFileList, getRelativePath, md5, calculateCRC32, getQuery, getViewHeight, getFileExtByType, FileTypeMarkdown, FileTypeJSON, FileTypeText, detectFileType, httpBuildQuery, convertTs2Time, convertDBTime, convertDBTime2Unix
+    sortFileList, getRelativePath, md5, calculateCRC32, getQuery, getViewHeight, getFileExtByType, FileTypeMarkdown, FileTypeJSON, FileTypeText, detectFileType, httpBuildQuery, convertTs2Time, convertDBTime, convertDBTime2Unix, sleep
 }
 export {
-    sortFileList, getRelativePath, md5, calculateCRC32, getQuery, getViewHeight, getFileExtByType, FileTypeMarkdown, FileTypeJSON, FileTypeText, detectFileType, httpBuildQuery, convertTs2Time, convertDBTime, convertDBTime2Unix
+    sortFileList, getRelativePath, md5, calculateCRC32, getQuery, getViewHeight, getFileExtByType, FileTypeMarkdown, FileTypeJSON, FileTypeText, detectFileType, httpBuildQuery, convertTs2Time, convertDBTime, convertDBTime2Unix, sleep
 }
