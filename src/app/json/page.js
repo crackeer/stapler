@@ -86,9 +86,14 @@ class App extends React.Component {
             ],
         });
         if (file == null) return;
-        let content = await invoke.readFile(file);
+       
         try {
-            let json = JSON.parse(content);
+            let result = await invoke.readFile(file);
+            if (!result.success) {
+                message(result.message);
+                return;
+            }
+            let json = JSON.parse(result.data);
             this.editor.set(json);
         } catch (e) { }
     };

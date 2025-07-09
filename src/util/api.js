@@ -1,4 +1,4 @@
-import { fetch, Body } from '@tauri-apps/api/http';
+import { fetch } from '@tauri-apps/plugin-http';
 import common from './common'
 import lodash from 'lodash'
 
@@ -33,7 +33,7 @@ const post = async (url, data, headers) => {
         let result = await fetch(url, {
             method: 'POST',
             timeout: 1,
-            body: Body.json(data),
+            body: data,
             headers: headers,
         })
         console.log("POST", url, data, result)

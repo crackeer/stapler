@@ -9,11 +9,10 @@ var writeFile = async (file, content) => {
 };
 
 var readFile = async (file, content) => {
-    let Result = await invoke("get_file_content", {
+    let result = await invoke("get_file_content", {
         name: file,
-        content: content,
     });
-    return Result;
+    return result;
 };
 
 var readDir = async (dir, ext) => {

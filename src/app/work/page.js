@@ -15,8 +15,10 @@ import {
     Card,
     Grid,
     Checkbox,
+    Statistic,
 } from "@arco-design/web-react";
-import { set } from "lodash";
+import common  from "@/util/common";
+import lodash  from "lodash";
 const Row = Grid.Row;
 const Col = Grid.Col;
 const CheckboxGroup = Checkbox.Group;
@@ -24,14 +26,8 @@ const CubeSizes = ["2048", "4096", "6144"];
 
 const VRPage = () => {
     const [observerCount, setObserverCount] = useState(0);
-    const [viewHeight, setViewHeight] = useState(250);
-    const [panoIndex, setPanoIndex] = useState(0);
-    const [currentDownloads, setCurrentDownloads] = useState([]);
-    const [downloadType, setDownloadType] = useState("");
-    const [downloadProgress, setDownloadProgress] = useState(0);
-    const [downloading, setDownloading] = useState(false);
-    const [currentDownloadIndex, setCurrentDownloadIndex] = useState(-1);
-    const [tilesetURLs, setTilesetURLs] = useState([]);
+    const [downloadList, setDownloadList] = useState([]);
+    const [current, setCurrent] = useState("");
     const [downloadStatus, setDownloadStatus] = useState("");
     var editor = null;
     const [form] = Form.useForm();
@@ -55,9 +51,13 @@ const VRPage = () => {
             ],
         });
         if (file == null) return;
-        let content = await invoke.readFile(file);
         try {
-            let json = JSON.parse(content);
+            let result = await invoke.readFile(file);
+            if (!result.success) {
+                message(result.message);
+                return;
+            }
+            let json = JSON.parse(result.data);
             editor.set(json);
             setCubeSize(json);
         } catch (e) {}
@@ -101,62 +101,46 @@ const VRPage = () => {
         form.setFieldValue("download_dir", selected);
     };
 
-    const downloadCube = async () => {
+    const downloadWork = async () => {
         let jsonValue = editor.get();
         let baseURL = form.getFieldValue("base_url");
         let cubeSizes = form.getFieldValue("cube_size");
         let downloadDir = form.getFieldValue("download_dir");
+
+        let newWorkJson = convertWork(jsonValue);
+        
         if (downloadDir == null || downloadDir == "") {
             message("请选择下载目录");
             return;
         }
         let cubeList = getCubeList(jsonValue, cubeSizes);
-        setDownloading(true);
-        setDownloadType("cube");
-        setDownloadStatus("");
-        for (var i in cubeList) {
-            setPanoIndex(parseInt(i) + 1);
-            setCurrentDownloads(cubeList[i]);
-            await downloadResource(baseURL, cubeList[i], downloadDir);
-        }
-        setDownloading(false);
-        setCurrentDownloads([]);
+        let modelList = getModelList(jsonValue, baseURL);
+        let layers = getLayers(jsonValue, baseURL);
+        let totalData = [...cubeList, ...modelList, ...layers];
+        console.log(layers);
+        setDownloadStatus("downloading");
+        setDownloadList(totalData);
+        await downloadResource(totalData, baseURL, downloadDir);
+        let workJsonSave = await path.join(downloadDir, "work.json");
+        await invoke.writeFile(workJsonSave, JSON.stringify(newWorkJson));
+        setDownloadList([]);
         setDownloadStatus("success");
     };
 
-    const downloadModel = async () => {
-        let jsonValue = editor.get();
-        let baseURL = form.getFieldValue("base_url");
-        let downloadDir = form.getFieldValue("download_dir");
-        if (downloadDir == null || downloadDir == "") {
-            message("请选择下载目录");
-            return;
-        }
-        let modelList = getModelList(jsonValue);
-        if (modelList.length == 0) {
-            message("model not found");
-            return;
-        }
-        setDownloading(true);
-        setDownloadStatus("");
-        setDownloadType("model");
-        setCurrentDownloads(modelList);
-        await downloadResource(baseURL, modelList, downloadDir);
-        setDownloading(false);
-        setCurrentDownloads([]);
-        setDownloadStatus("success");
-    };
 
-    const getModelList = (jsonValue) => {
+    const getModelList = (jsonValue, baseUL) => {
         let retData = [];
         if (jsonValue.model == undefined) {
             return [];
         }
         if (jsonValue.model.file_url != undefined) {
-            retData.push({
-                name: "model",
-                path: jsonValue.model.file_url,
-            });
+            if (
+                common.startWithProtocol(jsonValue.model.file_url) 
+            ) {
+                retData.push(removeBaseURL(jsonValue.model.file_url, baseURL));
+            } else {
+                retData.push(jsonValue.model.file_url);
+            }
         }
         if (jsonValue.model.material_textures != undefined) {
             let prefix = "";
@@ -164,10 +148,7 @@ const VRPage = () => {
                 prefix = jsonValue.model.material_base_url;
             }
             for (var i in jsonValue.model.material_textures) {
-                retData.push({
-                    name: "material_textures" + i,
-                    path: prefix + jsonValue.model.material_textures[i],
-                });
+                retData.push(prefix + jsonValue.model.material_textures[i]);
             }
         }
         return retData;
@@ -177,116 +158,157 @@ const VRPage = () => {
         let retData = [];
         let items = ["front", "back", "left", "right", "up", "down"];
         for (var i in jsonValue.panorama.list) {
-            let tmp = [];
             for (var j in items) {
                 for (var k in cubeSizes) {
-                    tmp.push({
-                        name: items[j] + "_" + cubeSizes[k],
-                        path: jsonValue.panorama.list[i][items[j]].replace(
+                    retData.push(
+                        jsonValue.panorama.list[i][items[j]].replace(
                             "cube_2048",
                             "cube_" + cubeSizes[k]
-                        ),
-                    });
+                        )
+                    );
                 }
             }
-            retData.push(tmp);
         }
         return retData;
     };
 
-    const downloadResource = async (baseUL, list, saveDir) => {
-        for (var i in list) {
-            let url = baseUL + list[i].path;
-            let dest = await path.join(saveDir, list[i].path);
-            setCurrentDownloadIndex(i);
-            await invoke.httpDownloadFile(url, dest);
-        }
-        setCurrentDownloadIndex(-1);
-    };
-
-    const downloadLayer = async (layerType) => {
-        let jsonValue = editor.get();
-        let baseURL = form.getFieldValue("base_url");
-        let downloadDir = form.getFieldValue("download_dir");
-        if (downloadDir == null || downloadDir == "") {
-            message("请选择下载目录");
-            return;
-        }
+    const getLayers = (jsonValue, baseURL) => {
+        let retData = [];
         if (
             jsonValue.model == undefined ||
-            (jsonValue.model.layers != undefined &&
-                jsonValue.model.layers != null &&
-                jsonValue.model.layers.length < 1)
+            jsonValue.model.layers == undefined ||
+            jsonValue.model.layers == null
         ) {
-            message("mesh not found");
-            return;
+            return [];
         }
-        console.log(layerType);
-        let tilesetURL = "";
+        let tilesetURLs = [];
         for (var i in jsonValue.model.layers) {
-            if (jsonValue.model.layers[i].type == layerType) {
-                tilesetURL = jsonValue.model.layers[i].tileset_url;
+            tilesetURLs.push(jsonValue.model.layers[i].tileset_url);
+        }
+        for (var i in tilesetURLs) {
+            if (
+                common.startWithProtocol(tilesetURLs[i]) 
+            ) {
+                retData.push(removeBaseURL(tilesetURLs[i], baseURL));
+            } else {
+                retData.push(tilesetURLs[i]);
             }
         }
-        if (tilesetURL == "") {
-            message("mesh not found");
-            return;
-        }
-        if (
-            tilesetURL.startsWith("http://") ||
-            tilesetURL.startsWith("https://")
-        ) {
-            let parts = tilesetURL.split("/" + layerType + "/");
-            tilesetURL = layerType + "/" + parts[parts.length - 1];
-            baseURL = parts[0] + "/";
-        }
-        console.log(tilesetURL, layerType, baseURL);
-        setTilesetURLs([tilesetURL]);
-        setDownloadType(layerType);
-
-        setDownloading(true);
-        setDownloadStatus("");
-        await downloadTileset(baseURL, downloadDir);
-        setDownloading(false);
-        setDownloadStatus("success");
+        return retData;
     };
 
-    const downloadTileset = async (baseURL, downloadDir) => {
-        if (tilesetURLs.length == 0) {
-            return;
+    const removeBaseURL = (fullURL, baseUrl) => {
+        if (fullURL.indexOf("/mesh/") != -1) {
+            let parts = fullURL.split("/mesh/");
+            return "mesh/" + parts[parts.length - 1];
         }
+        if (fullURL.indexOf("/point_cloud/") != -1) {
+            let parts = fullURL.split("/point_cloud/");
+            return "point_cloud/" + parts[parts.length - 1];
+        }
+        if (fullURL.indexOf("/model/") != -1) {
+            let parts = fullURL.split("/model/");
+            return "model/" + parts[parts.length - 1];
+        }
+        return fullURL.replace(baseUrl, "");
+    };
 
-        // 获取第一个tileset.json
-        let curJSON = tilesetURLs.shift();
-        console.log("GET", curJSON);
-        let fullURL = baseURL + curJSON;
-        let savePath = await path.join(downloadDir, curJSON);
-        // 下载tileset.json，解析其中的tileset.json/pnts/glb/b3dm
-        let result = await invoke.httpDownloadFileV2(fullURL, savePath);
-        if (!result.success) {
-            console.log(result);
-            message.error(result.message);
+    const downloadResource = async (list, baseUL, saveDir) => {
+        if (list.length == 0) {
             return;
         }
-        let jsonData = JSON.parse(result.data);
-        let data = parseTileset(jsonData);
-        let batchDownloads = [];
-        for (var i in data) {
-            if (data[i].endsWith(".json")) {
-                tilesetURLs.push(comparePath(curJSON, data[i]));
-            } else {
-                batchDownloads.push({
-                    name: data[i],
-                    path: comparePath(curJSON, data[i]),
-                });
+        let first = list.shift();
+        let fullURL = baseUL + first;
+        let dest = await path.join(saveDir, first);
+        setCurrent(first);
+        if (!first.endsWith(".json")) {
+            if (false == await doDownload(fullURL, dest)) {
+                message("下载失败");
+                return;
+            }
+        } else {
+            let result = await doDownloadJson(fullURL, dest);
+            if (result === false) {
+                message("下载失败");
+                return;
+            }
+            let jsonData = JSON.parse(result);
+            let data = parseTileset(jsonData);
+            for (var i in data) {
+                list.push(comparePath(first, data[i]));
             }
         }
-        setTilesetURLs([...tilesetURLs]);
-        // download：pnts / glb / b3dm
-        setCurrentDownloads(batchDownloads);
-        await downloadResource(baseURL, batchDownloads, downloadDir);
-        await downloadTileset(baseURL, downloadDir);
-        return;
+        setDownloadList(list);
+        await downloadResource(list, baseUL, saveDir);
+    };
+
+    const doDownloadJson = async (url, dest) => {
+         try {
+            let result = await invoke.fileExists(dest);
+            if (result.success && result.data.exists) {
+                let data = await invoke.readFile(dest);
+                if (data.success) {
+                    return data.data;
+                }
+            }
+        } catch(e) {
+            console.log(e);
+            return false
+        }
+
+         try {
+            let result = await invoke.httpDownloadFileV2(url, dest);
+            if (!result.success) {
+                return false
+            }
+            return result.data
+        } catch(e) {
+            console.log(e);
+            return false
+        }
+    }
+    const doDownload = async (url, dest) => {
+        try {
+            let result = await invoke.fileExists(dest);
+            if (result.success && result.data.exists) {
+                return true;
+            }
+        } catch(e) {
+            console.log(e);
+            return false
+        }
+        try {
+            let result = await invoke.httpDownloadFile(url, dest);
+            if (result.success) {
+                return true;
+            }
+            await invoke.deleteFile(dest);
+            return false
+        } catch(e) {
+            console.log(e);
+            return false
+        }
+    }
+
+    const convertWork = (jsonValue) => {
+        let data = lodash.cloneDeep(jsonValue);
+        let baseURL = lodash.get(data, 'base_URL', '');
+        data['base_url'] = "{{BASE_URL}}"
+        if (lodash.get(data, 'model.file_url', '').length > 0 && common.startWithProtocol(data.model.file_url)) {
+            data.model.file_url = removeBaseURL(data.model.file_url, baseURL);
+        }
+        let layers = lodash.get(data, 'model.layers', []);
+        delete data.title_picture_url;
+        delete data.picture_url
+        if (layers.length > 0) {
+            for (var i in layers) {
+                if (common.startWithProtocol(layers[i].tileset_url)) {
+                    layers[i]['tileset_url'] = removeBaseURL(layers[i].tileset_url, baseURL);
+                }
+            }
+            data.model.layers = layers;
+        }
+        return data;
     };
 
     const comparePath = (basePath, newPath) => {
@@ -334,7 +356,7 @@ const VRPage = () => {
                         <Row gutter={10}>
                             <Col span={21}>
                                 <JSONEditor
-                                    height={viewHeight}
+                                    height={300}
                                     ref={onJSONEditorReady}
                                     json={{}}
                                     onValidate={onJsonValidate}
@@ -379,30 +401,12 @@ const VRPage = () => {
                         <Space>
                             <Button
                                 type="primary"
-                                onClick={downloadCube}
-                                disabled={downloading}
+                                onClick={downloadWork}
+                                disabled={downloadStatus == "downloading"}
                             >
-                                {downloading && downloadType == "cube"
+                                {downloadStatus == "downloading"
                                     ? "下载中..."
-                                    : "下载Cube"}
-                            </Button>
-                            <Button
-                                type="primary"
-                                onClick={downloadModel}
-                                disabled={downloading}
-                            >
-                                {downloading && downloadType == "model"
-                                    ? "下载中..."
-                                    : "下载Model"}
-                            </Button>
-                            <Button
-                                type="primary"
-                                onClick={downloadLayer.bind(this, "mesh")}
-                                disabled={downloading}
-                            >
-                                {downloading && downloadType == "mesh"
-                                    ? "下载中..."
-                                    : "下载Mesh"}
+                                    : "下载"}
                             </Button>
                         </Space>
                     </Form.Item>
@@ -416,71 +420,19 @@ const VRPage = () => {
                 />
             ) : null}
 
-            {downloadType == "cube" ? (
-                <Card title="Cube图">
-                    <h4>
-                        当前下载：正在下载第{panoIndex} / {observerCount}点位
-                    </h4>
-                    <DownloadList
-                        list={currentDownloads}
-                        currentIndex={currentDownloadIndex}
-                    />
-                </Card>
-            ) : null}
-
-            {downloadType == "model" ? (
-                <Card title="模型">
-                    <DownloadList
-                        list={currentDownloads}
-                        currentIndex={currentDownloadIndex}
-                    />
-                </Card>
-            ) : null}
-
-            {downloadType == "mesh" || downloadType == "point_cloud" ? (
-                <Card title={downloadType == "mesh" ? "Mesh" : "点云"}>
-                    <Row gutter={20}>
-                        <Col span={12}>
-                            <h4>
-                                等待下载tileset.json(数量：{tilesetURLs.length})
-                            </h4>
-                            <div
-                                style={{ height: "400px", overflow: "scroll" }}
-                            >
-                                {tilesetURLs.map((item, index) => {
-                                    return <p key={index}>{item}</p>;
-                                })}
-                            </div>
-                        </Col>
-                        <Col span={12}>
-                            <h4>当前下载：</h4>
-                            <DownloadList
-                                list={currentDownloads}
-                                currentIndex={currentDownloadIndex}
-                            />
-                        </Col>
-                    </Row>
+            {downloadStatus == "downloading" ? (
+                <Card>
+                    <div>
+                        <Statistic
+                            title=" 剩余下载项"
+                            value={downloadList.length}
+                            style={{ marginRight: 60 }}
+                            extra={<>正在下载：{current}</>}
+                        />
+                    </div>
                 </Card>
             ) : null}
         </>
-    );
-};
-
-const DownloadList = (props) => {
-    const { list, currentIndex } = props;
-    return (
-        <div>
-            {list.map((item, index) => {
-                return (
-                    <p
-                        key={index}
-                        style={index == currentIndex ? { color: "red" } : {}}
-                    >
-                        {item.name} : {item.path}
-                    </p>
-                );
-            })}
-        </div>
     );
 };
 
