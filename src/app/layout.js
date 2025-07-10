@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import "@/styles/globals.css";
 import "@arco-design/web-react/dist/css/arco.css";
 import { Layout, Menu } from "@arco-design/web-react";
-
+import '@arco-design/web-react/es/_util/react-19-adapter'
 import invoke from "@/util/invoke";
 import cache from "@/util/cache";
 const Sider = Layout.Sider;

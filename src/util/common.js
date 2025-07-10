@@ -135,6 +135,34 @@ function extractURLs(data) {
     return retData
 }
 
+function superDecode(data) {
+    if (data == null) return data
+    if (typeof data == 'string') {
+        try {
+            return JSON.parse(data)
+        } catch (e) {
+            return data
+        }
+    }
+    
+    if (typeof data == 'object' && data.length == undefined) {
+        let retData = {}
+        Object.keys(data).forEach(key => {
+            retData[key] = superDecode(data[key])
+        })
+        return retData
+    }
+    
+    if (typeof data == 'object' && data.length != undefined) {
+        let list = []
+        for (let i in data) {
+            list.push(superDecode(data[i]))
+        }
+        return list
+    }
+    return data
+}
+
 export default {
     sortFileList,
     getRelativePath,
@@ -153,7 +181,8 @@ export default {
     convertDBTime2Unix,
     sleep,
     startWithProtocol,
-    extractURLs
+    extractURLs,
+    superDecode
     
 };
 export {
@@ -174,5 +203,6 @@ export {
     convertDBTime2Unix,
     sleep,
     startWithProtocol,
-    extractURLs
+    extractURLs,
+    superDecode
 };

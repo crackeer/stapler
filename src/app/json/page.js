@@ -33,6 +33,8 @@ class App extends React.Component {
             convert: "",
             convertTitle: "",
             visible: false,
+            urlVisible: false,
+            urls: [],
             tmpName: "",
             cacheVisible: false,
             cacheNames: [],
@@ -110,15 +112,22 @@ class App extends React.Component {
         let data = JSON.stringify(this.editor.get())
         this.editor.set(data);
     }
+    unserialize = () => {
+        let data = this.editor.get();
+        let json = JSON.parse(data);
+        this.editor.set(json);
+    }
+    superDecode = () => {
+        let data = this.editor.get();
+        this.editor.set(common.superDecode(data));
+    }
     clearJSON = () => {
         this.editor.set({});
     }
     extractURL = () => {
         let data = this.editor.get();
         let urls = common.extractURLs(data);
-        Modal.info({ title: '提取URL结果', content: <>
-            <Input.TextArea value={urls.join("\n")} rows={20} />
-        </> });
+        this.setState({ urls: urls, urlVisible: true });
     }
     render() {
         return (
@@ -163,6 +172,19 @@ class App extends React.Component {
                             serialize
                         </Button>
                         <Button
+                            onClick={this.unserialize}
+                            type="outline"
+                        >
+                            unserialize
+                        </Button>
+
+                          <Button
+                            onClick={this.superDecode}
+                            type="outline"
+                        >
+                            superDecode
+                        </Button>
+                        <Button
                             onClick={this.extractURL}
                             type="outline"
                             icon={<IconShareInternal />}
@@ -176,7 +198,7 @@ class App extends React.Component {
                     alignCenter={false}
                     visible={this.state.visible}
                     footer={null}
-                    style={{ width: "60%", top: "100" }}
+                    style={{ width: "70%", top: "100" }}
                     autoFocus={false}
                     focusLock={true}
                     onCancel={() => {
@@ -185,6 +207,23 @@ class App extends React.Component {
                 >
                     <ClickToCopy value={this.state.convert}>复制</ClickToCopy>
                     <Input.TextArea value={this.state.convert} rows={20} />
+                </Modal>
+                <Modal
+                    title={"提取结果"}
+                    alignCenter={false}
+                    visible={this.state.urlVisible}
+                    footer={null}
+                    style={{ width: "60%", top: "100" }}
+                    autoFocus={false}
+                    focusLock={true}
+                    onCancel={() => {
+                        this.setState({ urlVisible: false });
+                    }}
+                >
+                    <ClickToCopy value={this.state.urls.join("\n")}>复制</ClickToCopy>
+                    <div style={{marginTop: "10px"}}>
+                        <Input.TextArea value={this.state.urls.join("\n")} rows={20} />
+                    </div>
                 </Modal>
             </div>
         );
