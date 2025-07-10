@@ -2,6 +2,9 @@
 import React from "react";
 import { useEffect } from "react";
 import cache from "@/util/cache";
+export const dynamic = 'auto' // 或 'error' 禁止动态渲染
+export const dynamicParams = false // 禁用未定义动态路由
+
 export default function Home() {
 
     async function redirect() {
