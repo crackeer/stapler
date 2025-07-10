@@ -14,6 +14,7 @@ import {
     IconFire,
     IconAlignCenter,
     IconRefresh,
+    IconShareInternal
 } from "@arco-design/web-react/icon";
 import { save, open, message } from "@tauri-apps/plugin-dialog";
 import JSONEditor from "@/component/JSONEditor";
@@ -112,6 +113,13 @@ class App extends React.Component {
     clearJSON = () => {
         this.editor.set({});
     }
+    extractURL = () => {
+        let data = this.editor.get();
+        let urls = common.extractURLs(data);
+        Modal.info({ title: '提取URL结果', content: <>
+            <Input.TextArea value={urls.join("\n")} rows={20} />
+        </> });
+    }
     render() {
         return (
             <div>
@@ -154,6 +162,13 @@ class App extends React.Component {
                         >
                             serialize
                         </Button>
+                        <Button
+                            onClick={this.extractURL}
+                            type="outline"
+                            icon={<IconShareInternal />}
+                        >
+                            提取URL
+                        </Button>                        
                     </Space>
                 </div>
                 <Modal

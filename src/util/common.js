@@ -113,6 +113,28 @@ const startWithProtocol = (url) => {
     return url.startsWith("http://") || url.startsWith("https://");
 };
 
+
+
+function extractURLs(data) {
+    if (data == null) return []
+    if(typeof data == 'string' && startWithProtocol(data)) {
+       return [data]
+    }
+    let retData = []
+    // 对象
+    if (typeof data == 'object' && data.length == undefined) {
+        Object.keys(data).forEach(key => {
+            retData.push(...extractURLs(data[key]))
+        })
+    }
+    if (typeof data == 'object' && data.length != undefined) {
+        for (let i in data) {
+            retData.push(...extractURLs(data[i]))
+        }
+    }
+    return retData
+}
+
 export default {
     sortFileList,
     getRelativePath,
@@ -131,6 +153,8 @@ export default {
     convertDBTime2Unix,
     sleep,
     startWithProtocol,
+    extractURLs
+    
 };
 export {
     sortFileList,
@@ -150,4 +174,5 @@ export {
     convertDBTime2Unix,
     sleep,
     startWithProtocol,
+    extractURLs
 };
