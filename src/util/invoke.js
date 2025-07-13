@@ -240,6 +240,14 @@ var listFTPFiles = async (connectKey, path) => {
     });
 };
 
+var ftpUploadFile = async (connectKey, path, localFile) => {
+    return await invoke("ftp_upload_file", {
+        key: connectKey,
+        path: path,
+        localFile: localFile,
+    });
+};
+
 var httpDownloadFile = async (url, dest) => {
     return await invoke("http_download_file", {
         url: url,
@@ -290,6 +298,7 @@ export {
     listFTPFiles,
     httpDownloadFile,
     httpDownloadFileV2,
+    ftpUploadFile
 };
 
 export default {
@@ -327,4 +336,5 @@ export default {
     listFTPFiles,
     httpDownloadFile,
     httpDownloadFileV2,
+    ftpUploadFile
 };

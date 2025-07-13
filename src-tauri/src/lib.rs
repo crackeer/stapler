@@ -6,9 +6,12 @@ use rust_box::tauri::command::ssh::{
     download_remote_file, remote_exec_command, remote_list_files, upload_remote_file,
 };
 use rust_box::tauri::command::{
-    http_request::{do_http_request, parse_github_ip, parse_html_title, parse_js_code, http_download_file, http_download_file_v2},
+    ftp::{connect_ftp, ftp_delete_file, ftp_download_file, ftp_list, ftp_upload_file},
+    http_request::{
+        do_http_request, http_download_file, http_download_file_v2, parse_github_ip,
+        parse_html_title, parse_js_code,
+    },
     http_server::{start_static_server, static_server_status, stop_static_server},
-    ftp::{connect_ftp, ftp_list}, 
 };
 
 use rust_box::tauri::command::file::{
@@ -16,8 +19,7 @@ use rust_box::tauri::command::file::{
     rename_file, write_file, write_media_file,
 };
 use rust_box::tauri::command::js::run_js_code;
-use tauri::{Window};
-
+use tauri::Window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -26,7 +28,11 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_sql::Builder::default().add_migrations("sqlite:json.db", get_sqlite_migrations()).build())
+        .plugin(
+            tauri_plugin_sql::Builder::default()
+                .add_migrations("sqlite:json.db", get_sqlite_migrations())
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             get_file_content,
             write_file,
@@ -54,13 +60,15 @@ pub fn run() {
             run_js_code,
             connect_ftp,
             ftp_list,
+            ftp_delete_file,
+            ftp_upload_file,
+            ftp_download_file,
             http_download_file,
-            http_download_file_v2
+            http_download_file_v2,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
 
 #[tauri::command]
 fn set_window_title(window: Window, title: String) -> String {

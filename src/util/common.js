@@ -163,6 +163,36 @@ function superDecode(data) {
     return data
 }
 
+function formatCommandOutput(parts, startIndex, headers) {
+    if (parts.length < 1) {
+        return []
+    }
+    let retData = []
+    for (let i = startIndex; i < parts.length; i++) {
+        if (parts[i].length > 0) {
+            let values = parts[i].split(/\s+/)
+            let tmp = mappingRowData(values, headers)
+            retData.push(tmp)
+        }
+    }
+    return retData
+}
+
+function mappingRowData(values, headers) {
+    let tmp = {}
+    
+    for (let j = 0; j < values.length; j++) {
+        if (values[j].length < 1) {
+            
+        } else if (j < headers.length) {
+            tmp[headers[j]] =  tmp[headers[j]] == undefined ? values[j] : tmp[headers[j]] + ' ' + values[j]
+        } else {
+            tmp[j + ''] = values[j]
+        }
+    }
+    return tmp
+}
+
 export default {
     sortFileList,
     getRelativePath,
@@ -182,8 +212,8 @@ export default {
     sleep,
     startWithProtocol,
     extractURLs,
-    superDecode
-    
+    superDecode,
+    formatCommandOutput
 };
 export {
     sortFileList,
@@ -204,5 +234,6 @@ export {
     sleep,
     startWithProtocol,
     extractURLs,
-    superDecode
+    superDecode,
+    formatCommandOutput
 };

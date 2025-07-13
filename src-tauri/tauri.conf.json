@@ -13,9 +13,9 @@
     "windows": [
       {
         "title": "tauri-tool2",
-        "width": 800,
+        "width": 1200,
         "label" : "main",
-        "height": 600
+        "height": 800
       }
     ],
     "security": {
