@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useEffect, useState } from "react";
-import { message, open } from '@tauri-apps/plugin-dialog';
+import { message, open, confirm } from '@tauri-apps/plugin-dialog';
 import { basename } from '@tauri-apps/api/path'
 import {
     Upload,
@@ -14,7 +14,8 @@ import {
     Divider,
     Space,
     Link,
-    Table
+    Table,
+    Popconfirm 
 } from "@arco-design/web-react";
 import '@arco-design/web-react/es/_util/react-19-adapter';
 import invoke from "@/util/invoke";
@@ -53,6 +54,7 @@ const FtpPage = () => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [newDirName, setNewDirName] = useState('');
 
     var init = async () => {
         let data = await getLastForm();
@@ -66,6 +68,9 @@ const FtpPage = () => {
 
     useEffect(() => {
         init();
+        return () => {
+            invoke.disconnectFTPServer(connectKey)
+        }
     }, []);
 
     const tableColumns = [
@@ -97,10 +102,10 @@ const FtpPage = () => {
         },
         {
             title: '操作',
-            render : () => {
-                return <Space>
+            render: (text, record) => {
+                return <Space>                    
+                    <Button size='small' type='text' onClick={deleteFile.bind(this, record)}>删除</Button>
                     <Button size='small' type='text'>下载</Button>
-                    <Button size='small' type='text'>删除</Button>
                 </Space>
             }
         }
@@ -196,6 +201,51 @@ const FtpPage = () => {
         refreshFiles(connectKey, dir.join('/'))
     }
 
+    const toDelete = async (record) => {
+        let confirm = await confirm("确认删除`" + record.name + "`吗？")
+
+        if (!confirm) {
+            return
+        }
+        let path = [currentDir, record.name].join('/')
+        if (record.type == 'directory') {
+            let result = await invoke.ftpDeleteDir(connectKey, path)
+            console.log(result)
+            message("删除成功")
+            refreshFiles(connectKey, currentDir)
+            return
+        }
+        let result = await invoke.ftpDeleteFile(connectKey, path)
+        console.log(result)
+        message("删除成功")
+        refreshFiles(connectKey, currentDir)
+    }
+
+    var disconnectFTPServer = async () => {
+        try {
+            await invoke.disconnectFTPServer(connectKey)
+            setConnectKey('')
+        } catch (e) {
+            message(e)
+            setConnectKey('')
+        }
+    }
+
+    var createDir = async () => {
+        try {
+            if (newDirName.length < 1) {
+                message('请输入文件夹名称')
+                return
+            }
+            let path = [currentDir, newDirName].join('/')
+            await invoke.ftpCreateDir(connectKey, path)
+            setNewDirName('')
+            refreshFiles(connectKey, currentDir)
+        } catch (e) {
+            message(e)
+        }
+    }
+
     return (
         <>
             <Card>
@@ -247,9 +297,15 @@ const FtpPage = () => {
                     <Button onClick={toUpload} type="outline" disabled={uploading}>
                         {uploading ? '上传中....' : '上传'}
                     </Button>
-                    <Button type='outline'>新建文件夹</Button>
+                     <Popconfirm position='bottom'content={<>
+                            <Input.TextArea placeholder='请输入文件夹名称' value={newDirName} onChange={(e) => setNewDirName(e.target.value)}/>
+                        </>} onOk={createDir}>
+                         <Button type='outline'>新建文件夹</Button>
+                     </Popconfirm>
+                   
                     <Button onClick={() => refreshFiles(connectKey, currentDir)} type="outline">刷新</Button>
                     <Button onClick={goUpper} type="outline">上一级</Button>
+                    <Button onClick={disconnectFTPServer} type="outline">断开连接</Button>
                 </Space>
                 <Table
                     data={list}

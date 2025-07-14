@@ -6,7 +6,7 @@ use rust_box::tauri::command::ssh::{
     download_remote_file, remote_exec_command, remote_list_files, upload_remote_file,
 };
 use rust_box::tauri::command::{
-    ftp::{connect_ftp, ftp_delete_file, ftp_download_file, ftp_list, ftp_upload_file},
+    ftp::{connect_ftp, disconnect_ftp, ftp_delete_file, ftp_delete_dir, ftp_download_file, ftp_list, ftp_upload_file},
     http_request::{
         do_http_request, http_download_file, http_download_file_v2, parse_github_ip,
         parse_html_title, parse_js_code,
@@ -59,8 +59,10 @@ pub fn run() {
             parse_github_ip,
             run_js_code,
             connect_ftp,
+            disconnect_ftp,
             ftp_list,
             ftp_delete_file,
+            ftp_delete_dir,
             ftp_upload_file,
             ftp_download_file,
             http_download_file,

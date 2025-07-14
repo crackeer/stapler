@@ -233,6 +233,12 @@ var connectFTPServer = async (host, port, username, password) => {
     });
 };
 
+var disconnectFTPServer = async (connectKey) => {
+    return await invoke("disconnect_ftp", {
+        key: connectKey,
+    });
+};
+
 var listFTPFiles = async (connectKey, path) => {
     return await invoke("ftp_list", {
         key: connectKey,
@@ -245,6 +251,20 @@ var ftpUploadFile = async (connectKey, path, localFile) => {
         key: connectKey,
         path: path,
         localFile: localFile,
+    });
+};
+
+var ftpDeleteFile = async (connectKey, path) => {
+    return await invoke("ftp_delete_file", {
+        key: connectKey,
+        path: path,
+    });
+};
+
+var ftpDeleteDir = async (connectKey, path) => {
+    return await invoke("ftp_delete_dir", {
+        key: connectKey,
+        path: path,
     });
 };
 
@@ -295,10 +315,13 @@ export {
     getLocalAddr,
     runJsCode,
     connectFTPServer,
+    disconnectFTPServer,
     listFTPFiles,
     httpDownloadFile,
     httpDownloadFileV2,
-    ftpUploadFile
+    ftpUploadFile,
+    ftpDeleteFile,
+    ftpDeleteDir,
 };
 
 export default {
@@ -333,8 +356,11 @@ export default {
     getLocalAddr,
     runJsCode,
     connectFTPServer,
+    disconnectFTPServer,
     listFTPFiles,
     httpDownloadFile,
     httpDownloadFileV2,
-    ftpUploadFile
+    ftpUploadFile,
+    ftpDeleteFile,
+    ftpDeleteDir,
 };
