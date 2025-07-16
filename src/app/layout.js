@@ -16,8 +16,8 @@ const pages = {
     "/web/tool" : "Web工具",
     "/request" : "请求",
     "/ftp" : "FTP",
-    "/work" : "VR下载",
     "/rsvr" : "VR解析",
+    "/work" : "VR下载",
     "/workx" : "VR转换",
 }
 

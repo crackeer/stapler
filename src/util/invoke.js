@@ -276,7 +276,7 @@ var httpDownloadFile = async (url, dest) => {
 };
 
 var httpDownloadFileV2 = async (url, dest) => {
-    console.log(url, dest)
+    console.log(url, dest);
     return await invoke("http_download_file_v2", {
         url: url,
         savePath: dest,
@@ -295,6 +295,12 @@ var createJSONPFile = async (src, dest, hash) => {
         srcFile: src,
         destFile: dest,
         hashCode: hash,
+    });
+};
+
+var writeRsvrJsonpAsset = async (dir) => {
+    return await invoke("write_rsvr_jsonp_asset", {
+        dir,
     });
 };
 
@@ -339,6 +345,7 @@ export {
     ftpDeleteDir,
     evalJsOnPage,
     createJSONPFile,
+    writeRsvrJsonpAsset,
 };
 
 export default {
@@ -382,4 +389,5 @@ export default {
     ftpDeleteDir,
     evalJsOnPage,
     createJSONPFile,
+    writeRsvrJsonpAsset,
 };

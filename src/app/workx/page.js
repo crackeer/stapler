@@ -76,6 +76,8 @@ const VRPage = () => {
         console.log(workJSON);
         let workSavePath = await path.join(saveDir, "work.js");
         await invoke.writeFile(workSavePath, 'var workJSON = ' + JSON.stringify(workJSON));
+        await invoke.writeRsvrJsonpAsset(saveDir);
+
         setConvertStatus("success");
     };
 

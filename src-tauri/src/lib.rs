@@ -19,6 +19,8 @@ use rust_box::tauri::command::file::{
     rename_file, write_file, write_media_file, create_jsonp_file,
 };
 use rust_box::tauri::command::webview::eval_js_on_page;
+use rust_box::tauri::command::work::write_rsvr_jsonp_asset;
+
 use rust_box::tauri::command::js::run_js_code;
 use tauri::Window;
 
@@ -70,6 +72,7 @@ pub fn run() {
             http_download_file_v2,
             eval_js_on_page,
             create_jsonp_file,
+            write_rsvr_jsonp_asset,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
