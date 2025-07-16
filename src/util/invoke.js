@@ -283,6 +283,13 @@ var httpDownloadFileV2 = async (url, dest) => {
     });
 };
 
+var evalJsOnPage = async (url, script) => {
+    return await invoke("eval_js_on_page", {
+        url: url,
+        script: script,
+    });
+};
+
 export {
     writeFile,
     readFile,
@@ -322,6 +329,7 @@ export {
     ftpUploadFile,
     ftpDeleteFile,
     ftpDeleteDir,
+    evalJsOnPage,
 };
 
 export default {
@@ -363,4 +371,5 @@ export default {
     ftpUploadFile,
     ftpDeleteFile,
     ftpDeleteDir,
+    evalJsOnPage
 };

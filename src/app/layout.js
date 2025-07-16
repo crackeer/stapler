@@ -17,6 +17,7 @@ const pages = {
     "/request" : "请求",
     "/ftp" : "FTP",
     "/work" : "VR下载",
+    "/rsvr" : "VR解析",
 }
 
 export default function RootLayout({ children }) {
