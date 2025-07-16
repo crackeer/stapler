@@ -9,6 +9,7 @@ export default function Home() {
 
     async function redirect() {
         let lastPage = await cache.readFile("last-page") || "/json";
+        console.log("getLastPage", lastPage);
         if(lastPage == '/') {
             lastPage = '/json'
         }

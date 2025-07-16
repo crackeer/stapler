@@ -283,10 +283,18 @@ var httpDownloadFileV2 = async (url, dest) => {
     });
 };
 
-var evalJsOnPage = async (url, script) => {
+var evalJsOnPage = async (url, scripts) => {
     return await invoke("eval_js_on_page", {
         url: url,
-        script: script,
+        scripts: scripts,
+    });
+};
+
+var createJSONPFile = async (src, dest, hash) => {
+    return await invoke("create_jsonp_file", {
+        srcFile: src,
+        destFile: dest,
+        hashCode: hash,
     });
 };
 
@@ -330,6 +338,7 @@ export {
     ftpDeleteFile,
     ftpDeleteDir,
     evalJsOnPage,
+    createJSONPFile,
 };
 
 export default {
@@ -371,5 +380,6 @@ export default {
     ftpUploadFile,
     ftpDeleteFile,
     ftpDeleteDir,
-    evalJsOnPage
+    evalJsOnPage,
+    createJSONPFile,
 };

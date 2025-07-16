@@ -17,8 +17,8 @@ import {
     Checkbox,
     Statistic,
 } from "@arco-design/web-react";
-import common  from "@/util/common";
-import lodash  from "lodash";
+import common from "@/util/common";
+import lodash from "lodash";
 const Row = Grid.Row;
 const Col = Grid.Col;
 const CheckboxGroup = Checkbox.Group;
@@ -108,7 +108,7 @@ const VRPage = () => {
         let downloadDir = form.getFieldValue("download_dir");
 
         let newWorkJson = convertWork(jsonValue);
-        
+
         if (downloadDir == null || downloadDir == "") {
             message("请选择下载目录");
             return;
@@ -127,16 +127,13 @@ const VRPage = () => {
         setDownloadStatus("success");
     };
 
-
     const getModelList = (jsonValue, baseUL) => {
         let retData = [];
         if (jsonValue.model == undefined) {
             return [];
         }
         if (jsonValue.model.file_url != undefined) {
-            if (
-                common.startWithProtocol(jsonValue.model.file_url) 
-            ) {
+            if (common.startWithProtocol(jsonValue.model.file_url)) {
                 retData.push(removeBaseURL(jsonValue.model.file_url, baseURL));
             } else {
                 retData.push(jsonValue.model.file_url);
@@ -186,9 +183,7 @@ const VRPage = () => {
             tilesetURLs.push(jsonValue.model.layers[i].tileset_url);
         }
         for (var i in tilesetURLs) {
-            if (
-                common.startWithProtocol(tilesetURLs[i]) 
-            ) {
+            if (common.startWithProtocol(tilesetURLs[i])) {
                 retData.push(removeBaseURL(tilesetURLs[i], baseURL));
             } else {
                 retData.push(tilesetURLs[i]);
@@ -222,7 +217,7 @@ const VRPage = () => {
         let dest = await path.join(saveDir, first);
         setCurrent(first);
         if (!first.endsWith(".json")) {
-            if (false == await doDownload(fullURL, dest)) {
+            if (false == (await doDownload(fullURL, dest))) {
                 message("下载失败");
                 return;
             }
@@ -243,7 +238,7 @@ const VRPage = () => {
     };
 
     const doDownloadJson = async (url, dest) => {
-         try {
+        try {
             let result = await invoke.fileExists(dest);
             if (result.success && result.data.exists) {
                 let data = await invoke.readFile(dest);
@@ -251,31 +246,31 @@ const VRPage = () => {
                     return data.data;
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.log(e);
-            return false
+            return false;
         }
 
-         try {
+        try {
             let result = await invoke.httpDownloadFileV2(url, dest);
             if (!result.success) {
-                return false
+                return false;
             }
-            return result.data
-        } catch(e) {
+            return result.data;
+        } catch (e) {
             console.log(e);
-            return false
+            return false;
         }
-    }
+    };
     const doDownload = async (url, dest) => {
         try {
             let result = await invoke.fileExists(dest);
             if (result.success && result.data.exists) {
                 return true;
             }
-        } catch(e) {
+        } catch (e) {
             console.log(e);
-            return false
+            return false;
         }
         try {
             let result = await invoke.httpDownloadFile(url, dest);
@@ -283,27 +278,33 @@ const VRPage = () => {
                 return true;
             }
             await invoke.deleteFile(dest);
-            return false
-        } catch(e) {
+            return false;
+        } catch (e) {
             console.log(e);
-            return false
+            return false;
         }
-    }
+    };
 
     const convertWork = (jsonValue) => {
         let data = lodash.cloneDeep(jsonValue);
-        let baseURL = lodash.get(data, 'base_URL', '');
-        data['base_url'] = "{{BASE_URL}}"
-        if (lodash.get(data, 'model.file_url', '').length > 0 && common.startWithProtocol(data.model.file_url)) {
+        let baseURL = lodash.get(data, "base_URL", "");
+        data["base_url"] = "{{BASE_URL}}";
+        if (
+            lodash.get(data, "model.file_url", "").length > 0 &&
+            common.startWithProtocol(data.model.file_url)
+        ) {
             data.model.file_url = removeBaseURL(data.model.file_url, baseURL);
         }
-        let layers = lodash.get(data, 'model.layers', []);
+        let layers = lodash.get(data, "model.layers", []);
         delete data.title_picture_url;
-        delete data.picture_url
+        delete data.picture_url;
         if (layers.length > 0) {
             for (var i in layers) {
                 if (common.startWithProtocol(layers[i].tileset_url)) {
-                    layers[i]['tileset_url'] = removeBaseURL(layers[i].tileset_url, baseURL);
+                    layers[i]["tileset_url"] = removeBaseURL(
+                        layers[i].tileset_url,
+                        baseURL
+                    );
                 }
             }
             data.model.layers = layers;
@@ -364,7 +365,7 @@ const VRPage = () => {
                             </Col>
                             <Col span={3}>
                                 <Button type="primary" onClick={loadJSON}>
-                                    加载json
+                                    LoadFile
                                 </Button>
                             </Col>
                         </Row>

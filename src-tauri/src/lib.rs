@@ -16,7 +16,7 @@ use rust_box::tauri::command::{
 
 use rust_box::tauri::command::file::{
     create_dir, create_file, delete_dir, delete_file, file_exists, get_file_content, list_folder,
-    rename_file, write_file, write_media_file,
+    rename_file, write_file, write_media_file, create_jsonp_file,
 };
 use rust_box::tauri::command::webview::eval_js_on_page;
 use rust_box::tauri::command::js::run_js_code;
@@ -69,6 +69,7 @@ pub fn run() {
             http_download_file,
             http_download_file_v2,
             eval_js_on_page,
+            create_jsonp_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

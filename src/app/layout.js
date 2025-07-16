@@ -18,6 +18,7 @@ const pages = {
     "/ftp" : "FTP",
     "/work" : "VR下载",
     "/rsvr" : "VR解析",
+    "/workx" : "VR转换",
 }
 
 export default function RootLayout({ children }) {
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
     useEffect(() => {
         setActiveMenuKey([window.location.pathname]);
         cache.writeFile("last-page", window.location.pathname)
+        console.log("last-page", window.location.pathname);
     }, []);
     return (
         <html lang="en">
