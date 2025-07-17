@@ -11,6 +11,9 @@
     "fs:allow-app-write-recursive",
     "fs:allow-app-read-recursive",
     "dialog:allow-message", 
-    "dialog:default"
+    "dialog:default",
+    "sql:allow-load",
+    "sql:default",
+    "sql:allow-execute"
   ]
 }

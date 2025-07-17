@@ -16,13 +16,18 @@ import {
     Grid,
     Checkbox,
     Statistic,
+    Radio,
 } from "@arco-design/web-react";
 import common from "@/util/common";
 import lodash from "lodash";
+import database from "@/util/database";
+
 const Row = Grid.Row;
 const Col = Grid.Col;
+const RadioGroup = Radio.Group;
 const CheckboxGroup = Checkbox.Group;
 const CubeSizes = ["2048", "4096", "6144"];
+
 
 const VRPage = () => {
     const [observerCount, setObserverCount] = useState(0);
@@ -33,11 +38,30 @@ const VRPage = () => {
     const [form] = Form.useForm();
 
     useEffect(() => {
+        database.getPageInitData("work", "default").then((result) => {
+            if(result != null) {
+                console.log(result);
+                form.setFieldsValue({
+                    cube_size: result.cube_size,
+                    download_dir: result.download_dir,
+                    download_layers: result.download_layers,
+                })
+                setTimeout(() => {
+                    editor.set( result.work)
+                }, 30)
+            } else {
+                form.setFieldValue("cube_size", [CubeSizes[0]]);
+                form.setFieldValue("download_layers", 1);
+            }
+        })
         form.setFieldValue("cube_size", [CubeSizes[0]]);
     }, []);
 
+
+
     const onJSONEditorReady = (target) => {
         editor = target;
+        console.log('onJSONEditorReady', editor)
     };
 
     const loadJSON = async () => {
@@ -64,9 +88,6 @@ const VRPage = () => {
     };
     const onJsonValidate = (json) => {
         if (json == null) return;
-        if (json.base_url != undefined) {
-            form.setFieldValue("base_url", json.base_url);
-        }
         if (json.panorama != undefined && json.panorama.list != undefined) {
             setObserverCount(json.panorama.list.length);
         }
@@ -103,21 +124,38 @@ const VRPage = () => {
 
     const downloadWork = async () => {
         let jsonValue = editor.get();
-        let baseURL = form.getFieldValue("base_url");
+
+        let baseURL = lodash.get(jsonValue, "base_url", "");
+        if (baseURL == "") {
+            message("work.json中请输入base_url");
+            return;
+        }
         let cubeSizes = form.getFieldValue("cube_size");
         let downloadDir = form.getFieldValue("download_dir");
-
+        let downloadLayers = form.getFieldValue("download_layers");
         let newWorkJson = convertWork(jsonValue);
-
         if (downloadDir == null || downloadDir == "") {
             message("请选择下载目录");
             return;
         }
+
+        console.log("downloadLayers", parseInt(downloadLayers));
+        await database.updatePageInitData("work", "default", JSON.stringify({
+            work: jsonValue,
+            cube_size: cubeSizes,
+            download_dir: downloadDir,
+            download_layers: parseInt(downloadLayers),
+        }));
         let cubeList = getCubeList(jsonValue, cubeSizes);
         let modelList = getModelList(jsonValue, baseURL);
-        let layers = getLayers(jsonValue, baseURL);
+        let layers = [];
+        if (parseInt(downloadLayers) > 0) {
+            layers = getLayers(jsonValue, baseURL);
+            console.log(layers);
+        } else {
+            lodash.set(newWorkJson, "model.layers", []);
+        }
         let totalData = [...cubeList, ...modelList, ...layers];
-        console.log(layers);
         setDownloadStatus("downloading");
         setDownloadList(totalData);
         await downloadResource(totalData, baseURL, downloadDir);
@@ -352,7 +390,10 @@ const VRPage = () => {
     return (
         <>
             <Card style={{ marginBottom: "10px" }}>
-                <Form form={form} labelCol={{ span: 4 }}>
+                <Form
+                    form={form}
+                    labelCol={{ span: 4 }}
+                >
                     <Form.Item field="json" label="work.json">
                         <Row gutter={10}>
                             <Col span={21}>
@@ -374,18 +415,23 @@ const VRPage = () => {
                         <div>{observerCount}</div>
                     </Form.Item>
                     <Form.Item
-                        label="BaseURL"
-                        field="base_url"
-                        rules={[{ required: true, message: "请输入BaseURL" }]}
-                    >
-                        <Input placeholder="base_url" name="base_url" />
-                    </Form.Item>
-                    <Form.Item
                         label="Cube尺寸"
                         field="cube_size"
                         rules={[{ required: true, message: "请选择Cube大小" }]}
                     >
                         <CheckboxGroup options={CubeSizes} />
+                    </Form.Item>
+                    <Form.Item
+                        label="模型layers下载"
+                        field="download_layers"
+                        rules={[
+                            { required: true, message: "请选择模型layers下载" },
+                        ]}
+                    >
+                        <RadioGroup type="radio">
+                            <Radio value={1}>是</Radio>
+                            <Radio value={0}>否</Radio>
+                        </RadioGroup>
                     </Form.Item>
                     <Form.Item
                         label="存储目录"

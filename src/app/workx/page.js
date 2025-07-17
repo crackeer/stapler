@@ -21,14 +21,16 @@ import lodash from "lodash";
 const Row = Grid.Row;
 const Col = Grid.Col;
 const CheckboxGroup = Checkbox.Group;
-const CubeSizes = ["2048", "4096", "6144"];
 
 const buttonTextMap = {
     converting: "转换中",
     indexing: "检索中",
 };
 
-const defaultCerticate = `-----BEGIN CERTIFICATE-----\nMIIEMzCCAhsCCQDYAS/7ATZRmTANBgkqhkiG9w0BAQsFADCBkzELMAkGA1UEBhMC\nQ04xEDAOBgNVBAgMB0JlaWppbmcxEDAOBgNVBAcMB0JlaWppbmcxFDASBgNVBAoM\nC2xpYW5qaWEuY29tMRAwDgYDVQQLDAdSZWFsc2VlMREwDwYDVQQDDAhIYXJkd2Fy\nZTElMCMGCSqGSIb3DQEJARYWbml1aGFpcWluZ0BsaWFuamlhLmNvbTAeFw0yMTA5\nMTAwNTIwMDBaFw0zMTA5MDgwNTIwMDBaMIGmMQswCQYDVQQGEwJDTjEQMA4GA1UE\nCAwHQmVpSmluZzEQMA4GA1UEBwwHQmVpSmluZzEQMA4GA1UECgwHUmVhbHNlZTEZ\nMBcGA1UECwwQUmVhbHNlZUFwcEdldHdheTEgMB4GA1UEAwwXYXBwLWdhdGV3YXku\ncmVhbHNlZS5jb20xJDAiBgkqhkiG9w0BCQEWFWRldmVsb3BlckByZWFsc2VlLmNv\nbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAuv/y3Ezsy/wh3LCA8vomPbgI\nSO9iO5kyR+oAetklD+epMU6J/ZbvTDEomZxuS5iyyKGBupzAh2ZFLIy7tsE71Vx1\nIIvT7Kdyq66lMU4YzdrpKUcxv7oOQnO8DA1orKluNa4jkyXBywHKs/Q+20LVc+RD\ngKXqFGJUdo8mAxEScs0CAwEAATANBgkqhkiG9w0BAQsFAAOCAgEAkMxsU4VLPd4J\n0rElBNBIyqPtvnlTs6VkhIK0l4oM58wtDKc1uG9UPSX5j29NguZM6LOe0jCsU2Vg\nEpUseMWQjx4o2yBg7MokQyjWc1zu6PppKhQ+RqHQy/biJ2zsIMpX3oMASXffvnW5\nn4Bjyo1JdDJiLm1fLvLlVVxQoraJD+rtpqWDEYixGVREUo5OIL5Y5dVjkHG2r9RQ\nQuu3yEiyr9gAW8yhz3YR6/sJ6boyGK8NC0v8Jih7NnCdT+9ML+3jn3P5F3TeXdSf\nVeYIm5oWAOTe3AjjKP8ARMb2RYACjg80/AcowD/dvRRjbwQmyucUNug2pXJynXpD\nNfx1IBmUmzSAT1Z5yNuY/f3VRBJvmIQ6Jpmef+g0/wUJpyS4SObguItyYlFPLqRH\nK1oKqNX/uV0GWWEQl6Lml986TzlHxc4ljtHBhjzlKYIYYZLWWipk4JiB8hxJcTK+\ncrgvclEQSxFlmAyoqxYFClrOOsPqZJdBhDTvoUWnnWuJLQt7DLHpyInp+S75Gg3o\n0zgHpt9m26B3YbjQGYMQlYmhl2VLQa+Ey0W8UZQXLcTvoRT4p+8crqr6cNNsxCyZ\nm08vBbEMIMvhBeLQvpM75oaMBmelegipFl2eelxVIHdGJWoyJSZQUdXN0uSidhZp\nI7AIgzhqK1Ku/IXK0OSXJonn+/9X/VI=\n-----END CERTIFICATE-----`
+const defaultCerticate = `-----BEGIN CERTIFICATE-----\nMIIEMzCCAhsCCQDYAS/7ATZRmTANBgkqhkiG9w0BAQsFADCBkzELMAkGA1UEBhMC\nQ04xEDAOBgNVBAgMB0JlaWppbmcxEDAOBgNVBAcMB0JlaWppbmcxFDASBgNVBAoM\nC2xpYW5qaWEuY29tMRAwDgYDVQQLDAdSZWFsc2VlMREwDwYDVQQDDAhIYXJkd2Fy\nZTElMCMGCSqGSIb3DQEJARYWbml1aGFpcWluZ0BsaWFuamlhLmNvbTAeFw0yMTA5\nMTAwNTIwMDBaFw0zMTA5MDgwNTIwMDBaMIGmMQswCQYDVQQGEwJDTjEQMA4GA1UE\nCAwHQmVpSmluZzEQMA4GA1UEBwwHQmVpSmluZzEQMA4GA1UECgwHUmVhbHNlZTEZ\nMBcGA1UECwwQUmVhbHNlZUFwcEdldHdheTEgMB4GA1UEAwwXYXBwLWdhdGV3YXku\ncmVhbHNlZS5jb20xJDAiBgkqhkiG9w0BCQEWFWRldmVsb3BlckByZWFsc2VlLmNv\nbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAuv/y3Ezsy/wh3LCA8vomPbgI\nSO9iO5kyR+oAetklD+epMU6J/ZbvTDEomZxuS5iyyKGBupzAh2ZFLIy7tsE71Vx1\nIIvT7Kdyq66lMU4YzdrpKUcxv7oOQnO8DA1orKluNa4jkyXBywHKs/Q+20LVc+RD\ngKXqFGJUdo8mAxEScs0CAwEAATANBgkqhkiG9w0BAQsFAAOCAgEAkMxsU4VLPd4J\n0rElBNBIyqPtvnlTs6VkhIK0l4oM58wtDKc1uG9UPSX5j29NguZM6LOe0jCsU2Vg\nEpUseMWQjx4o2yBg7MokQyjWc1zu6PppKhQ+RqHQy/biJ2zsIMpX3oMASXffvnW5\nn4Bjyo1JdDJiLm1fLvLlVVxQoraJD+rtpqWDEYixGVREUo5OIL5Y5dVjkHG2r9RQ\nQuu3yEiyr9gAW8yhz3YR6/sJ6boyGK8NC0v8Jih7NnCdT+9ML+3jn3P5F3TeXdSf\nVeYIm5oWAOTe3AjjKP8ARMb2RYACjg80/AcowD/dvRRjbwQmyucUNug2pXJynXpD\nNfx1IBmUmzSAT1Z5yNuY/f3VRBJvmIQ6Jpmef+g0/wUJpyS4SObguItyYlFPLqRH\nK1oKqNX/uV0GWWEQl6Lml986TzlHxc4ljtHBhjzlKYIYYZLWWipk4JiB8hxJcTK+\ncrgvclEQSxFlmAyoqxYFClrOOsPqZJdBhDTvoUWnnWuJLQt7DLHpyInp+S75Gg3o\n0zgHpt9m26B3YbjQGYMQlYmhl2VLQa+Ey0W8UZQXLcTvoRT4p+8crqr6cNNsxCyZ\nm08vBbEMIMvhBeLQvpM75oaMBmelegipFl2eelxVIHdGJWoyJSZQUdXN0uSidhZp\nI7AIgzhqK1Ku/IXK0OSXJonn+/9X/VI=\n-----END CERTIFICATE-----`;
+
+
+
 const VRPage = () => {
     const [convertList, setConvertList] = useState([]);
     const [current, setCurrent] = useState("");
@@ -70,12 +72,13 @@ const VRPage = () => {
 
         // convert and write work.js
         let workJSON = await readWorkJSON(workDir);
-        workJSON["certificate"] = defaultCerticate
-        console.log(workJSON);
+        workJSON["certificate"] = defaultCerticate;
         workJSON = convertWorkJSON(workJSON);
-        console.log(workJSON);
         let workSavePath = await path.join(saveDir, "work.js");
-        await invoke.writeFile(workSavePath, 'var workJSON = ' + JSON.stringify(workJSON));
+        await invoke.writeFile(
+            workSavePath,
+            "var workJSON = " + JSON.stringify(workJSON)
+        );
         await invoke.writeRsvrJsonpAsset(saveDir);
 
         setConvertStatus("success");
@@ -89,10 +92,10 @@ const VRPage = () => {
                 message(result.message);
                 return;
             }
-            return JSON.parse(result.data)
+            return JSON.parse(result.data);
         } catch (e) {
             message(e);
-            return {}
+            return {};
         }
     };
 
@@ -105,37 +108,31 @@ const VRPage = () => {
                 fileURL + "." + hashMap[fileURL] + ".jsonp"
             );
         }
-        let material_textures = lodash.get(workJSON, "model.material_textures", []);
+        let material_textures = lodash.get(
+            workJSON,
+            "model.material_textures",
+            []
+        );
         let prefix = lodash.get(workJSON, "model.material_base_url", "");
         for (var i in material_textures) {
             let hashKey = prefix + material_textures[i];
             console.log(hashKey, hashMap[hashKey]);
             if (hashMap[hashKey] != undefined) {
                 material_textures[i] =
-                    material_textures[i] +
-                    "." +
-                   hashMap[hashKey]+
-                    ".jsonp";
+                    material_textures[i] + "." + hashMap[hashKey] + ".jsonp";
             }
         }
         lodash.set(workJSON, "model.material_textures", material_textures);
-        let layers = lodash.get(workJSON, "model.layers", []);
-        for (var i in layers) {
-            if (hashMap[layers[i].tileset_url] != undefined) {
-                layers[i].tileset_url =
-                    layers[i].tileset_url +
-                    "." +
-                    hashMap[layers[i].tileset_url] +
-                    ".jsonp";
-            }
-        }
-        lodash.set(workJSON, "model.layers", layers);
+        lodash.set(workJSON, "model.layers", []);
 
         let panoList = lodash.get(workJSON, "panorama.list", []);
         let items = ["back", "front", "left", "right", "up", "down"];
         for (var i in panoList) {
             for (var j in items) {
-                console.log(panoList[i][items[j]], hashMap[panoList[i][items[j]]]);
+                console.log(
+                    panoList[i][items[j]],
+                    hashMap[panoList[i][items[j]]]
+                );
                 if (hashMap[panoList[i][items[j]]] != undefined) {
                     panoList[i][items[j]] =
                         panoList[i][items[j]] +
@@ -173,8 +170,16 @@ const VRPage = () => {
 
         for (var i in files) {
             let tmpPath = await path.join(relativePath, files[i].name);
-            if (files[i].file_type == "file" && files[i].name != "work.json") {
-                retData.push(tmpPath);
+            if (files[i].file_type == "file") {
+                if (
+                    files[i].name.endsWith(".json") ||
+                    files[i].name.endsWith(".b3dm") ||
+                    files[i].name.endsWith(".glb") ||
+                    files[i].name.endsWith(".pnts")
+                ) {
+                } else {
+                    retData.push(tmpPath);
+                }
             } else {
                 let subList = await getFileList(workDir, tmpPath);
                 retData = retData.concat(subList);

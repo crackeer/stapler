@@ -14,13 +14,13 @@ import {
     Radio,
 } from "@arco-design/web-react";
 import JSONEditor from "@/component/JSONEditor";
-
 const Row = Grid.Row;
 const Col = Grid.Col;
 
 import invoke from "@/util/invoke.js";
 import lodash from "lodash";
-import { message } from "@tauri-apps/plugin-dialog";
+import database from "@/util/database";
+import { message, save } from "@tauri-apps/plugin-dialog";
 const VRPage = () => {
     const [title, setTitle] = useState("");
     const [linkInfo, setLinkInfo] = useState(null);
@@ -33,8 +33,15 @@ const VRPage = () => {
     const [form] = Form.useForm();
     var editor = null;
     useEffect(() => {
-        form.setFieldValue("url", "https://realsee.cn/yBjjNoRL");
-        getWorkJSON()
+        database.getPageInitData("rsvr", "default").then((result) => {
+            console.log('InitData', result);
+            if(result != null) {
+                form.setFieldsValue({
+                    url: result.url,
+                })
+                getWorkJSON();
+            }
+        })
     }, []);
     const onJSONEditorReady = (target) => {
         if (!target) {
@@ -45,6 +52,9 @@ const VRPage = () => {
 
     const getWorkJSON = async () => {
         let url = form.getFieldValue("url");
+        if (url == "" || url == null || url ==undefined) {
+            return;
+        }
         try {
             setLoading(true);
             setWorks([]);
@@ -55,6 +65,9 @@ const VRPage = () => {
             setLinkInfo(null);
             editor.set({});
             let res = await invoke.parseJSCode(url);
+            await database.updatePageInitData("rsvr", "default", JSON.stringify({
+                url: url,
+            }));
             setLoading(false);
             for (var i in res) {
                 if (res[i].indexOf("_signature") > 0) {
@@ -106,6 +119,20 @@ const VRPage = () => {
         setCurrentWorkIndex(index);
         editor.set(works[index].work);
         setObserverCount(works[index].work.panorama.list.length);
+    };
+
+    const saveWork = async () => {
+        let file = await save({
+            filters: [
+                {
+                    name: "unknown",
+                    extensions: ["json"],
+                },
+            ],
+        });
+        if (file == null) return;
+        await invoke.writeFile(file, JSON.stringify(this.editor.get()));
+        alert("保存成功");
     };
 
     return (
@@ -164,7 +191,10 @@ const VRPage = () => {
                                 </p>
                                 <p>
                                     <strong>FiveInitData：</strong>
-                                    <Input.TextArea value={fiveInitData} rows={3}/>
+                                    <Input.TextArea
+                                        value={fiveInitData}
+                                        rows={3}
+                                    />
                                 </p>
                                 <p>
                                     <strong>点位数：</strong>
@@ -193,6 +223,15 @@ const VRPage = () => {
                             ref={onJSONEditorReady}
                             json={{}}
                         />
+                        <p>
+                            <Button
+                                type="outline"
+                                size="small"
+                                onClick={saveWork}
+                            >
+                                保存
+                            </Button>
+                        </p>
                     </Col>
                 </Row>
             </Card>
