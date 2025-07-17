@@ -15,6 +15,7 @@ const pages = {
     "/web/qrcode" : "二维码",
     "/web/tool" : "Web工具",
     "/request" : "请求",
+    "/mysql" : "MySQL",
     "/ftp" : "FTP",
     "/rsvr" : "VR解析",
     "/work" : "VR下载",
