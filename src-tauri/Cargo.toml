@@ -25,7 +25,7 @@ serde_json = "1"
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2.2.0"
 tauri-plugin-fs = "2"
-tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-sql = { version = "2", features = ["sqlite", "mysql"] }
 reqwest = { version = "0.11", features = ["json"] }
 base64 = {version = "0.21.2"}
 rust-embed="6.7.0"

@@ -1,6 +1,19 @@
 import Database from "@tauri-apps/plugin-sql";
 import dayjs from "dayjs";
 
+
+const getMySQL = async (host, username, password, database) => {
+    try {
+        let db = await Database.load(
+            `mysql://${username}:${password}@${host}/${database}`
+        );
+        return db;
+    } catch (error) {
+        console.error("连接数据库失败:", error);
+        return null;
+    }
+};
+
 var getSQLiteDB = async () => {
     return await Database.load("sqlite:json.db");
 };
@@ -22,35 +35,27 @@ var getContentList = async (contentType) => {
     );
 };
 
+var getContentListV1= async (contentType) => {
+    let db = await getSQLiteDB();
+    return await db.select(
+        "SELECT id, title, content_type, tag, content, create_at, modify_at from content WHERE content_type = $1 order by modify_at desc",
+        [contentType]
+    );
+};
+
 var getContent = async (id) => {
     let db = await getSQLiteDB();
     return await db.select("SELECT * from content WHERE id = $1", [id]);
 };
 
-var getCodeList = async () => {
-    return await getContentList("code");
+var getMySQLConfigList = async () => {
+    return await getContentListV1("mysql");
 };
 
-var createCode = async (title, content) => {
-    return await createContent(title, content, "code", "tag");
+var createMySQLConfig = async (title, content) => {
+    return await createContent(title, content, "mysql", "tag");
 };
 
-var getCode = async (id) => {
-    let list = await getContent(id);
-    if (list.length > 0) {
-        return list[0];
-    }
-    return null;
-};
-
-var updateCode = async (id, content) => {
-    let db = await getSQLiteDB();
-    let nowTime = dayjs().unix();
-    return await db.execute(
-        "update content set content = $1, modify_at = $2 where id = $3",
-        [content, nowTime, id]
-    );
-};
 
 var deleteContent = async (id) => {
     let db = await getSQLiteDB();
@@ -92,10 +97,9 @@ var updatePageInitData = async (page, tag, content) => {
 
 export default {
     deleteContent,
-    getCodeList,
-    createCode,
-    getCode,
-    updateCode,
+    getMySQLConfigList,
+    createMySQLConfig,
     getPageInitData,
     updatePageInitData,
+    getMySQL
 };
