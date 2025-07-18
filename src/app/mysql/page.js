@@ -53,6 +53,7 @@ export default function MySQLPage() {
                 return <Space>
                     <Button size='small' type='text' onClick={deleteConfig.bind(this, record)}>删除</Button>
                     <Button size='small' type='text' onClick={showCopyModal.bind(this, record)}>复制</Button>
+                    <Button size="small" type='text' onClick={connect.bind(this, record)}>连接</Button>
                 </Space>
             }
         }
@@ -87,6 +88,10 @@ export default function MySQLPage() {
             'password' : record.password,
             'database' : record.database,
         })
+    }
+
+    const connect = (record) => {
+        window.location.href = '/mysql/manage?id=' + record.id
     }
 
     const initMySQLs = () => {

@@ -97,6 +97,7 @@ var updatePageInitData = async (page, tag, content) => {
 
 export default {
     deleteContent,
+    getContent,
     getMySQLConfigList,
     createMySQLConfig,
     getPageInitData,
