@@ -201,10 +201,10 @@ const FtpPage = () => {
         refreshFiles(connectKey, dir.join('/'))
     }
 
-    const toDelete = async (record) => {
-        let confirm = await confirm("确认删除`" + record.name + "`吗？")
+    const deleteFile = async (record) => {
+        let yesNo = await confirm("确认删除`" + record.name + "`吗？")
 
-        if (!confirm) {
+        if (!yesNo) {
             return
         }
         let path = [currentDir, record.name].join('/')
@@ -312,6 +312,7 @@ const FtpPage = () => {
                     loading={loading}
                     columns={tableColumns}
                     style={{ marginTop: '10px' }}
+                    rowKey={(record) => record.id}
                     pagination={false}
                 />
             </Card>
