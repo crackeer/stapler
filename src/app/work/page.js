@@ -154,6 +154,9 @@ const VRPage = () => {
             console.log(layers);
         } else {
             lodash.set(newWorkJson, "model.layers", []);
+            if(newWorkJson.model != undefined && newWorkJson.model.tiles != undefined) {
+                delete newWorkJson.model.tiles
+            }
         }
         let totalData = [...cubeList, ...modelList, ...layers];
         setDownloadStatus("downloading");
@@ -209,16 +212,23 @@ const VRPage = () => {
 
     const getLayers = (jsonValue, baseURL) => {
         let retData = [];
-        if (
-            jsonValue.model == undefined ||
-            jsonValue.model.layers == undefined ||
-            jsonValue.model.layers == null
-        ) {
-            return [];
-        }
         let tilesetURLs = [];
-        for (var i in jsonValue.model.layers) {
-            tilesetURLs.push(jsonValue.model.layers[i].tileset_url);
+        let layers = lodash.get(jsonValue, "model.layers", []);
+        let b3md_mappings_url = lodash.get(jsonValue, "model.tiles.b3md_mappings_url", '')
+        let tileset_url = lodash.get(jsonValue, "model.tiles.tileset_url", '')
+        if (layers == null) {
+            layers = [];
+        }
+        if(b3md_mappings_url.length > 0) {
+            tilesetURLs.push(b3md_mappings_url)
+        }
+        if(tileset_url.length > 0) {
+            tilesetURLs.push(tileset_url)
+        }
+        console.log(tilesetURLs)
+
+        for (var i in layers) {
+            tilesetURLs.push(layers[i].tileset_url);
         }
         for (var i in tilesetURLs) {
             if (common.startWithProtocol(tilesetURLs[i])) {
@@ -243,6 +253,11 @@ const VRPage = () => {
             let parts = fullURL.split("/model/");
             return "model/" + parts[parts.length - 1];
         }
+
+        if (fullURL.indexOf("/lod/") != -1) {
+            let parts = fullURL.split("/lod/");
+            return "lod/" + parts[parts.length - 1];
+        } 
         return fullURL.replace(baseUrl, "");
     };
 
@@ -336,7 +351,7 @@ const VRPage = () => {
         let layers = lodash.get(data, "model.layers", []);
         delete data.title_picture_url;
         delete data.picture_url;
-        if (layers.length > 0) {
+        if (layers != null &&  layers.length > 0) {
             for (var i in layers) {
                 if (common.startWithProtocol(layers[i].tileset_url)) {
                     layers[i]["tileset_url"] = removeBaseURL(
