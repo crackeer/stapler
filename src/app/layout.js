@@ -17,6 +17,7 @@ const pages = {
     "/request" : "请求",
     "/mysql" : "MySQL",
     "/ftp" : "FTP",
+    "/download" : "批量下载",
     "/rsvr" : "VR解析",
     "/work" : "VR下载",
     "/workx" : "VR转换",

@@ -193,6 +193,17 @@ function mappingRowData(values, headers) {
     return tmp
 }
 
+function splitIntoArray(inputString) {
+    let array = inputString.split('\n');
+    let retData = []
+    for (var i in array) {
+        let parts = array[i].trim().split(',')
+        retData.push(...parts)
+    }
+    return retData
+
+}
+
 export default {
     sortFileList,
     getRelativePath,
@@ -213,7 +224,8 @@ export default {
     startWithProtocol,
     extractURLs,
     superDecode,
-    formatCommandOutput
+    formatCommandOutput,
+    splitIntoArray
 };
 export {
     sortFileList,
@@ -235,5 +247,6 @@ export {
     startWithProtocol,
     extractURLs,
     superDecode,
-    formatCommandOutput
+    formatCommandOutput,
+    splitIntoArray
 };
