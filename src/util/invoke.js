@@ -304,6 +304,12 @@ var writeRsvrJsonpAsset = async (dir) => {
     });
 };
 
+var openPath = async (path) => {
+    return await invoke("open_path", {
+        path,
+    });
+};
+
 export {
     writeFile,
     readFile,
@@ -346,6 +352,7 @@ export {
     evalJsOnPage,
     createJSONPFile,
     writeRsvrJsonpAsset,
+    openPath
 };
 
 export default {
@@ -390,4 +397,5 @@ export default {
     evalJsOnPage,
     createJSONPFile,
     writeRsvrJsonpAsset,
+    openPath
 };

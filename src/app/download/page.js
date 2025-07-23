@@ -13,11 +13,10 @@ import {
     Input,
     Card,
     Grid,
-    Checkbox,
     Statistic,
 } from "@arco-design/web-react";
 import common from "@/util/common";
-import lodash from "lodash";
+import database from "@/util/database";
 const Row = Grid.Row;
 const Col = Grid.Col;
 
@@ -25,18 +24,17 @@ const buttonTextMap = {
     downloading: "下载中...",
 };
 
-
-
-
 const DownloadPage = () => {
-
     const [downloadList, setDownloadList] = useState([]);
     const [current, setCurrent] = useState("");
     const [downloadStatus, setDownloadStatus] = useState("");
     const [form] = Form.useForm();
 
-    useEffect(() => { }, []);
-    var hashMap = {};
+    useEffect(() => {
+        database.getPageInitData("download", "default").then((result) => {
+            form.setFieldsValue(result);
+        });
+    }, []);
 
     const selectDirectory = async () => {
         let selected = await open({
@@ -60,52 +58,91 @@ const DownloadPage = () => {
             filters: [
                 {
                     name: "",
-                    extensions: ["txt", "log"],
+                    extensions: ["txt", "json"],
                 },
             ],
         });
-        if (file == null) return;
+       
+        if (file == undefined) {
+            return;
+        }
+        if (file == null && file.length < 1) return;
+
+        let urls = common.splitIntoArray(form.getFieldValue("content"), [
+            "\n",
+            "\r\n",
+            ",",
+            ";",
+            " ",
+        ]);
         try {
             let result = await invoke.readFile(file);
+            console.log(result);
             if (!result.success) {
                 message(result.message);
                 return;
             }
-            form.setFieldValue('content', result.data)
+            if (file.endsWith(".txt")) {
+                let parts = result.data.split("\n").filter((item) => {
+                    return (
+                        item.trim().length > 0 && common.startWithProtocol(item)
+                    );
+                });
+                urls.push(...parts);
+            } else if (file.endsWith(".json")  ) {
+                let data = JSON.parse(result.data);
+                urls.push(...common.extractURLs(data));
+            }
 
-        } catch (e) { }
+            form.setFieldValue("content", urls.join("\n"));
+        } catch (e) {
+            console.log(e);
+        }
     };
 
     const toDownload = async () => {
         let workDir = form.getFieldValue("work_dir");
         setDownloadStatus("downloading");
-        let urls = common.splitIntoArray(form.getFieldValue('content'));
-        console.log(form.getFieldValue('content'));
+        let urls = common.splitIntoArray(form.getFieldValue("content"), [
+            "\n",
+            "\r\n",
+            ",",
+            ";",
+            " ",
+        ]);
 
         if (urls.length < 1) {
             return;
         }
-        console.log(urls);
-
+        database.updatePageInitData(
+            "download",
+            "default",
+            form.getFieldsValue()
+        );
+       
         await doDownload(urls, workDir, 0);
         setDownloadStatus("success");
     };
 
+    const formChange = (_, values) => {
+        database.updatePageInitData("download", "default", values);
+    };
 
     const doDownload = async (list, saveDir, nameType) => {
         if (list.length == 0) {
             return;
         }
-        let first = list.shift();
+        let first = list.shift(); 
+        console.log(first);
         setDownloadList(list);
-        let object = new URL(first)
+        let object = new URL(first);
         let filePath = object.pathname;
         let destFile = await path.join(saveDir, filePath);
-        console.log(first, destFile);
 
         try {
             let result = await invoke.fileExists(destFile);
             if (result.success && result.data.exists) {
+                await doDownload(list, saveDir, nameType);
                 return true;
             }
         } catch (e) {
@@ -117,6 +154,7 @@ const DownloadPage = () => {
             console.log(first, destFile);
             let ret = await simpleDownload(first, destFile);
             if (ret === false) {
+
                 return false;
             }
             await doDownload(list, saveDir, nameType);
@@ -140,6 +178,7 @@ const DownloadPage = () => {
             if (result.success) {
                 return true;
             }
+            console.log(result);
             await invoke.deleteFile(dest);
             return false;
         } catch (e) {
@@ -148,23 +187,34 @@ const DownloadPage = () => {
         }
     };
 
+    const openDirectory = async () => {
+        let dir = form.getFieldValue("work_dir");
+        if (dir == null || dir == "") {
+            return;
+        }
+        await invoke.openPath(dir);
+    };
 
     return (
         <>
             <Card style={{ marginBottom: "10px" }}>
-                <Form form={form} labelCol={{ span: 4 }}>
-                    <Form.Item
-                        label="URL链接"
-                    >
+                <Form
+                    form={form}
+                    labelCol={{ span: 4 }}
+                    onValuesChange={formChange}
+                >
+                    <Form.Item label="URL链接">
                         <Row gutter={10}>
                             <Col span={21}>
-                                <Form.Item rules={[{ required: true }]} field="content">
+                                <Form.Item
+                                    rules={[{ required: true }]}
+                                    field="content"
+                                >
                                     <Input.TextArea
-                                        autoSize={{ minRows: 5, maxRows: 15 }}
-                                        placeholder="url链接"
+                                        rows={8}
+                                        placeholder="url链接，一行一个"
                                     />
                                 </Form.Item>
-
                             </Col>
                             <Col span={3}>
                                 <Button type="primary" onClick={loadTxt}>
@@ -173,25 +223,40 @@ const DownloadPage = () => {
                             </Col>
                         </Row>
                     </Form.Item>
-                    <Form.Item
-                        label="存储目录"
-                        field="work_dir"
-                        rules={[{ required: true, message: "请选择目录" }]}
-                    >
-                        <Input.Search
-                            searchButton={"选择目录"}
-                            placeholder="请选择目录"
-                            onSearch={selectDirectory}
-                        />
+                    <Form.Item label="存储目录">
+                        <Row gutter={10}>
+                            <Col span={15}>
+                                <Form.Item
+                                    rules={[{ required: true }]}
+                                    field="work_dir"
+                                >
+                                    <Input placeholder="请选择目录" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={9}>
+                                <Space>
+                                    <Button
+                                        onClick={selectDirectory}
+                                        type={"outline"}
+                                    >
+                                        选择
+                                    </Button>
+                                    <Button
+                                        onClick={openDirectory}
+                                        type={"outline"}
+                                    >
+                                        打开
+                                    </Button>
+                                </Space>
+                            </Col>
+                        </Row>
                     </Form.Item>
                     <Form.Item wrapperCol={{ offset: 4 }}>
                         <Space>
                             <Button
                                 type="primary"
                                 onClick={toDownload}
-                                disabled={
-                                    downloadStatus == "downloading"
-                                }
+                                disabled={downloadStatus == "downloading"}
                             >
                                 {buttonTextMap[downloadStatus] != undefined
                                     ? buttonTextMap[downloadStatus]
@@ -201,13 +266,6 @@ const DownloadPage = () => {
                     </Form.Item>
                 </Form>
             </Card>
-            {downloadStatus == "indexing" ? (
-                <Alert
-                    style={{ marginBottom: 10 }}
-                    type="info"
-                    content={`检索文件目录：${indexDir}`}
-                />
-            ) : null}
             {downloadStatus == "success" ? (
                 <Alert
                     style={{ marginBottom: 20 }}
@@ -217,7 +275,6 @@ const DownloadPage = () => {
             ) : null}
 
             {downloadStatus == "downloading" && (
-
                 <Card>
                     <div>
                         <Statistic
@@ -234,4 +291,3 @@ const DownloadPage = () => {
 };
 
 export default DownloadPage;
-

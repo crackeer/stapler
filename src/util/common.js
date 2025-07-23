@@ -117,8 +117,16 @@ const startWithProtocol = (url) => {
 
 function extractURLs(data) {
     if (data == null) return []
-    if(typeof data == 'string' && startWithProtocol(data)) {
-       return [data]
+    if(typeof data == 'string') {
+        if (startWithProtocol(data)) {
+            return [data]
+        }
+        try {
+            let jsonData = JSON.parse(data)
+            return extractURLs(jsonData)
+        } catch (e) {
+            return []
+        }
     }
     let retData = []
     // 对象
@@ -193,16 +201,41 @@ function mappingRowData(values, headers) {
     return tmp
 }
 
-function splitIntoArray(inputString) {
-    let array = inputString.split('\n');
-    let retData = []
-    for (var i in array) {
-        let parts = array[i].trim().split(',')
-        retData.push(...parts)
+function splitIntoArray(str, delimiters) {
+    if (str == null || str == undefined) {
+        return []
     }
+    if (typeof str != 'string') {
+        return []
+    }
+
+    if (str == '') {
+        return []
+    }
+
+    if (delimiters.length == 0) {
+        return [str]
+    }
+
+    let nowDelimiter = JSON.parse(JSON.stringify(delimiters))
+
+    let first = nowDelimiter.pop()
+    let parts = str.split(first)
+    if (delimiters.length == 0) {
+        return parts
+    }
+    let retData = []
+   
+    for(let i in parts) {
+        retData.push(...splitIntoArray(parts[i], nowDelimiter))
+    }
+
+    retData = retData.filter(item => item != '')
+
     return retData
 
-}
+};
+
 
 export default {
     sortFileList,

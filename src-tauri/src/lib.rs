@@ -22,6 +22,7 @@ use rust_box::tauri::command::webview::eval_js_on_page;
 use rust_box::tauri::command::work::write_rsvr_jsonp_asset;
 
 use rust_box::tauri::command::js::run_js_code;
+use rust_box::tauri::command::opener::open_path;
 use tauri::Window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -73,6 +74,7 @@ pub fn run() {
             eval_js_on_page,
             create_jsonp_file,
             write_rsvr_jsonp_asset,
+            open_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
