@@ -63,15 +63,6 @@ export default function MySQLPage() {
         initMySQLs()
     }, [])
 
-    const format = (list) => {
-        for(var i in list) {
-            let object = JSON.parse(list[i].content)
-            list[i] = lodash.merge(list[i], object)
-        }
-        console.log(list)
-        return list
-    }
-
 
     const showCreateModal = () => {
         setVisible(true);
@@ -96,7 +87,7 @@ export default function MySQLPage() {
 
     const initMySQLs = () => {
         database.getMySQLConfigList().then(result => {
-            setTableData(format(result))
+            setTableData(result)
         })
     }
 

@@ -1,0 +1,127 @@
+import React, { useEffect, useState } from "react";
+import {IconPlus} from "@arco-design/web-react/icon"
+import { Modal, Card, Button, Form, Input, Table, Space, Grid, Affix, Message } from "@arco-design/web-react"
+import sqlite from "./sqlite";
+import database from "@/util/database";
+import { confirm, message} from "@tauri-apps/api/dialog";
+const FormItem = Form.Item;
+const Row = Grid.Row;
+const Col = Grid.Col;
+
+function AddServerModal({ visible, setVisible, clusterId, callback }) {
+    const [selfVisible, setSelfVisible] = useState(visible)
+    const [form] = Form.useForm();
+    useEffect(() => {
+        setSelfVisible(visible)
+        console.log("AddServerModal Init", clusterId)
+        form.setFieldsValue({
+            server: "",
+            user: "root",
+            password: "",
+            port: "22",
+        })
+    }, [visible, clusterId])
+    var doAddServer = async () => {
+        let data = form.getFieldsValue()
+        data["cluster_id"] = clusterId + ''
+        console.log("AddServerModal", data, clusterId)
+        let result = await sqlite.createClusterServer(data)
+        Message.success("添加成功")
+        callback()
+        setSelfVisible(false)
+        setVisible(false)
+
+    }
+    return <Modal visible={selfVisible} title="加入集群" onCancel={() => {
+        setSelfVisible(false)
+        setVisible(false)
+    }} style={{ width: '60%' }} onConfirm={doAddServer}>
+        <Form autoComplete="off" form={form}>
+            <FormItem label="服务器IP" field="server"><Input placeholder="服务器IP" /></FormItem>
+            <FormItem label="用户" field="user"><Input placeholder="用户" /></FormItem>
+            <FormItem label="密码" field="password"><Input placeholder="密码" type="password" /></FormItem>
+            <FormItem label="端口" field="port"><Input placeholder="端口" /></FormItem>
+            <FormItem label="集群ID" field="cluster_id" hidden></FormItem>
+        </Form>
+    </Modal>
+}
+
+export default function App() {
+    const [clusters, setClusters] = useState([])
+    const [visible2, setVisible2] = useState(false)
+    const [serverList, setServerList] = useState([])
+    useEffect(() => {
+        getServerList()
+    }, [])
+
+    const columns = [
+        {
+            title: "服务器IP",
+            dataIndex: "ip",
+            key: "ip",
+        },
+        {
+            title: "端口",
+            dataIndex: "port",
+            key: "port",
+        },
+        {
+            title: "用户",
+            dataIndex: "user",
+            key: "user",
+        },
+        {
+            title: "密码",
+            dataIndex: "password",
+            key: "password",
+        },
+        {
+            title: "操作",
+            key: 'opt',
+            render: (col, record, index) => {
+                return (
+                    <Space>
+                        <Button
+                            onClick={deleteServer.bind(this, index)}
+                            size="mini"
+                            type="text"
+                            icon={<IconDelete />}
+                            status="danger"
+                        >
+                            删除
+                        </Button>
+                    </Space>
+                );
+            },
+        }
+    ]
+
+    const getServerList = async () => {
+        let result = await database.getServerList()
+        setServerList(result)
+    }
+    const addServer = (data) => {
+        console.log("addServer", data)
+        setCurrentClusterId(data.id)
+        setVisible2(true)
+    }
+    const deleteServer = async (item) => {
+        let result = confirm("确认删除服务器吗？")
+        if(result === false) {
+            return
+        }
+        try {
+            let result = await database.deleteContent(item.id)
+            message("删除成功")
+            getServerList()
+        } catch (e) {
+            confirm("删除失败")
+        }
+    }
+
+    return <div style={{ padding: "5px 10px" }}>
+        <Button onClick={addServer} type="primary">新增</Button>
+        <Table data={serverList} columns={columns} pagination={false} />
+        <AddServerModal visible={visible2} setVisible={setVisible2} clusterId={currentClusterId} callback={getClusters}/>
+    </div>
+}

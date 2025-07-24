@@ -1,7 +1,6 @@
 import Database from "@tauri-apps/plugin-sql";
 import dayjs from "dayjs";
 
-
 const getMySQL = async (host, username, password, database) => {
     try {
         let db = await Database.load(
@@ -35,7 +34,7 @@ var getContentList = async (contentType) => {
     );
 };
 
-var getContentListV1= async (contentType) => {
+var getContentListV1 = async (contentType) => {
     let db = await getSQLiteDB();
     return await db.select(
         "SELECT id, title, content_type, tag, content, create_at, modify_at from content WHERE content_type = $1 order by modify_at desc",
@@ -49,13 +48,13 @@ var getContent = async (id) => {
 };
 
 var getMySQLConfigList = async () => {
-    return await getContentListV1("mysql");
+    let data = await getContentListV1("mysql");
+    return formatList(data)
 };
 
 var createMySQLConfig = async (title, content) => {
     return await createContent(title, content, "mysql", "tag");
 };
-
 
 var deleteContent = async (id) => {
     let db = await getSQLiteDB();
@@ -95,6 +94,19 @@ var updatePageInitData = async (page, tag, content) => {
     return await createContent(page, content, "page", tag);
 };
 
+const formatList = (list) => {
+    for (var i in list) {
+        let object = JSON.parse(list[i].content);
+        list[i] = lodash.merge(list[i], object);
+    }
+    return list;
+};
+
+var getServerList = async () => {
+    let data = await getContentListV1("server");
+    return formatList(data)
+};
+
 export default {
     deleteContent,
     getContent,
@@ -102,5 +114,6 @@ export default {
     createMySQLConfig,
     getPageInitData,
     updatePageInitData,
-    getMySQL
+    getMySQL,
+    getServerList
 };
