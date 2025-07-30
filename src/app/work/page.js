@@ -34,6 +34,7 @@ const VRPage = () => {
     const [downloadList, setDownloadList] = useState([]);
     const [current, setCurrent] = useState("");
     const [downloadStatus, setDownloadStatus] = useState("");
+    const [fileCount, setFileCount] = useState(0);
     var editor = null;
     const [form] = Form.useForm();
 
@@ -158,15 +159,56 @@ const VRPage = () => {
                 delete newWorkJson.model.tiles
             }
         }
-        let totalData = [...cubeList, ...modelList, ...layers];
+
+        // tileset文件下载 + 解析
+        let totalData = [...cubeList, ...modelList];
+       
+        if (layers.length > 0) {
+            setDownloadStatus("indexing");
+            let  tileSetFiles = await parseTitleFiles(layers, baseURL, downloadDir, totalData.length);
+            totalData.push(...tileSetFiles);
+        }
+         setDownloadList(totalData);
+        
         setDownloadStatus("downloading");
-        setDownloadList(totalData);
         await downloadResource(totalData, baseURL, downloadDir);
         let workJsonSave = await path.join(downloadDir, "work.json");
         await invoke.writeFile(workJsonSave, JSON.stringify(newWorkJson));
         setDownloadList([]);
         setDownloadStatus("success");
-    };
+    }; 
+
+    const parseTitleFiles = async (files, baseURL, saveDir, total) => {
+        let tileSetFiles = [];
+        let jsonFiles = [];
+        do {
+            for (var i in files) {
+                setCurrent(files[i]);
+                let dest = await path.join(saveDir, files[i]);
+                let result = await doDownloadJson(baseURL + files[i], dest);
+                let currentFile = files[i];
+                if (result !== false) {
+                    let jsonData = JSON.parse(result);
+                    let data = parseTileset(jsonData);
+                    for (var i in data) {
+                        if (data[i].endsWith(".json")) {
+                            jsonFiles.push(comparePath(currentFile, data[i]));
+                        } else {
+                            tileSetFiles.push(comparePath(currentFile, data[i]));
+                        }
+                    }
+                }
+            }
+            files = []
+            if (jsonFiles.length > 0) {
+                files = jsonFiles;
+                jsonFiles = [];
+            }
+            setFileCount(total + tileSetFiles.length);
+        } while (files.length > 0);
+        return tileSetFiles;
+    }
+
 
     const getModelList = (jsonValue, baseUL) => {
         let retData = [];
@@ -262,30 +304,11 @@ const VRPage = () => {
     };
 
     const downloadResource = async (list, baseUL, saveDir) => {
-        if (list.length == 0) {
-            return;
-        }
         let first = list.shift();
         let fullURL = baseUL + first;
         let dest = await path.join(saveDir, first);
         setCurrent(first);
-        if (!first.endsWith(".json")) {
-            if (false == (await doDownload(fullURL, dest))) {
-                message("下载失败");
-                return;
-            }
-        } else {
-            let result = await doDownloadJson(fullURL, dest);
-            if (result === false) {
-                message("下载失败");
-                return;
-            }
-            let jsonData = JSON.parse(result);
-            let data = parseTileset(jsonData);
-            for (var i in data) {
-                list.push(comparePath(first, data[i]));
-            }
-        }
+        await doDownload(fullURL, dest)
         setDownloadList(list);
         await downloadResource(list, baseUL, saveDir);
     };
@@ -482,11 +505,29 @@ const VRPage = () => {
                 />
             ) : null}
 
+
+             {downloadStatus == "indexing" ? (
+                <Card>
+                    <Alert
+                        style={{ marginBottom: 20 }}
+                        type="info"
+                        content={<>正在检索需要下载的文件:{current}</>}
+                    />
+                    <div>
+                        <Statistic
+                            title="需要下载的文件数量"
+                            value={fileCount}
+                            style={{ marginRight: 60 }}
+                        />
+                    </div>
+                </Card>
+            ) : null}
+
             {downloadStatus == "downloading" ? (
                 <Card>
                     <div>
                         <Statistic
-                            title=" 剩余下载项"
+                            title="剩余下载项"
                             value={downloadList.length}
                             style={{ marginRight: 60 }}
                             extra={<>正在下载：{current}</>}
