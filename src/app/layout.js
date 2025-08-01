@@ -15,6 +15,7 @@ const pages = {
     "/web/qrcode" : "二维码",
     "/web/tool" : "Web工具",
     "/request" : "HTTP请求",
+    "/quickjs" : "QuickJS",
     "/mysql" : "MySQL",
     "/S3" : "S3",
     "/Redis" : "Redis",

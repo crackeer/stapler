@@ -17,6 +17,7 @@ import {
     Checkbox,
     Statistic,
     Radio,
+    Progress
 } from "@arco-design/web-react";
 import common from "@/util/common";
 import lodash from "lodash";
@@ -33,6 +34,7 @@ const VRPage = () => {
     const [observerCount, setObserverCount] = useState(0);
     const [downloadList, setDownloadList] = useState([]);
     const [current, setCurrent] = useState("");
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [downloadStatus, setDownloadStatus] = useState("");
     const [fileCount, setFileCount] = useState(0);
     var editor = null;
@@ -172,6 +174,7 @@ const VRPage = () => {
         
         setDownloadStatus("downloading");
         await downloadResource(totalData, baseURL, downloadDir);
+        console.log("downloadResourceEnd", downloadDir);
         let workJsonSave = await path.join(downloadDir, "work.json");
         await invoke.writeFile(workJsonSave, JSON.stringify(newWorkJson));
         setDownloadList([]);
@@ -195,6 +198,8 @@ const VRPage = () => {
                             jsonFiles.push(comparePath(currentFile, data[i]));
                         } else {
                             tileSetFiles.push(comparePath(currentFile, data[i]));
+                            total = total + 1;
+                            setFileCount(total);
                         }
                     }
                 }
@@ -204,7 +209,6 @@ const VRPage = () => {
                 files = jsonFiles;
                 jsonFiles = [];
             }
-            setFileCount(total + tileSetFiles.length);
         } while (files.length > 0);
         return tileSetFiles;
     }
@@ -304,13 +308,13 @@ const VRPage = () => {
     };
 
     const downloadResource = async (list, baseUL, saveDir) => {
-        let first = list.shift();
-        let fullURL = baseUL + first;
-        let dest = await path.join(saveDir, first);
-        setCurrent(first);
-        await doDownload(fullURL, dest)
-        setDownloadList(list);
-        await downloadResource(list, baseUL, saveDir);
+        for (var i in list) {
+            let fullURL = baseUL + list[i];
+            let dest = await path.join(saveDir, list[i]);
+            setCurrentIndex(parseInt(i));
+            setCurrent(list[i]);
+            await doDownload(fullURL, dest)
+        }
     };
 
     const doDownloadJson = async (url, dest) => {
@@ -326,7 +330,6 @@ const VRPage = () => {
             console.log(e);
             return false;
         }
-
         try {
             let result = await invoke.httpDownloadFileV2(url, dest);
             if (!result.success) {
@@ -527,11 +530,18 @@ const VRPage = () => {
                 <Card>
                     <div>
                         <Statistic
-                            title="剩余下载项"
-                            value={downloadList.length}
+                            title="下载进度"
+                            value={currentIndex}
+                            renderFormat={(value) => {
+                                return `${value + 1}/${downloadList.length}`;
+                            }}
                             style={{ marginRight: 60 }}
                             extra={<>正在下载：{current}</>}
                         />
+                         <Progress
+                                    percent={((currentIndex + 1) / downloadList.length).toFixed(2) * 100}
+                                     status='warning'
+                                />
                     </div>
                 </Card>
             ) : null}
