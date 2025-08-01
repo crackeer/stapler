@@ -223,7 +223,7 @@ const VRPage = () => {
         return tileSetFiles;
     };
 
-    const getModelList = (jsonValue, baseUL) => {
+    const getModelList = (jsonValue, baseURL) => {
         let retData = [];
         if (jsonValue.model == undefined) {
             return [];
@@ -379,7 +379,7 @@ const VRPage = () => {
 
     const convertWork = (jsonValue) => {
         let data = lodash.cloneDeep(jsonValue);
-        let baseURL = lodash.get(data, "base_URL", "");
+        let baseURL = lodash.get(data, "base_url", "");
         data["base_url"] = "{{BASE_URL}}";
         if (
             lodash.get(data, "model.file_url", "").length > 0 &&
