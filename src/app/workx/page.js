@@ -13,14 +13,13 @@ import {
     Input,
     Card,
     Grid,
-    Checkbox,
+    Link,
     Statistic,
 } from "@arco-design/web-react";
 import common from "@/util/common";
 import lodash from "lodash";
 const Row = Grid.Row;
 const Col = Grid.Col;
-const CheckboxGroup = Checkbox.Group;
 
 const buttonTextMap = {
     converting: "转换中",
@@ -29,17 +28,13 @@ const buttonTextMap = {
 
 const defaultCerticate = `-----BEGIN CERTIFICATE-----\nMIIEMzCCAhsCCQDYAS/7ATZRmTANBgkqhkiG9w0BAQsFADCBkzELMAkGA1UEBhMC\nQ04xEDAOBgNVBAgMB0JlaWppbmcxEDAOBgNVBAcMB0JlaWppbmcxFDASBgNVBAoM\nC2xpYW5qaWEuY29tMRAwDgYDVQQLDAdSZWFsc2VlMREwDwYDVQQDDAhIYXJkd2Fy\nZTElMCMGCSqGSIb3DQEJARYWbml1aGFpcWluZ0BsaWFuamlhLmNvbTAeFw0yMTA5\nMTAwNTIwMDBaFw0zMTA5MDgwNTIwMDBaMIGmMQswCQYDVQQGEwJDTjEQMA4GA1UE\nCAwHQmVpSmluZzEQMA4GA1UEBwwHQmVpSmluZzEQMA4GA1UECgwHUmVhbHNlZTEZ\nMBcGA1UECwwQUmVhbHNlZUFwcEdldHdheTEgMB4GA1UEAwwXYXBwLWdhdGV3YXku\ncmVhbHNlZS5jb20xJDAiBgkqhkiG9w0BCQEWFWRldmVsb3BlckByZWFsc2VlLmNv\nbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAuv/y3Ezsy/wh3LCA8vomPbgI\nSO9iO5kyR+oAetklD+epMU6J/ZbvTDEomZxuS5iyyKGBupzAh2ZFLIy7tsE71Vx1\nIIvT7Kdyq66lMU4YzdrpKUcxv7oOQnO8DA1orKluNa4jkyXBywHKs/Q+20LVc+RD\ngKXqFGJUdo8mAxEScs0CAwEAATANBgkqhkiG9w0BAQsFAAOCAgEAkMxsU4VLPd4J\n0rElBNBIyqPtvnlTs6VkhIK0l4oM58wtDKc1uG9UPSX5j29NguZM6LOe0jCsU2Vg\nEpUseMWQjx4o2yBg7MokQyjWc1zu6PppKhQ+RqHQy/biJ2zsIMpX3oMASXffvnW5\nn4Bjyo1JdDJiLm1fLvLlVVxQoraJD+rtpqWDEYixGVREUo5OIL5Y5dVjkHG2r9RQ\nQuu3yEiyr9gAW8yhz3YR6/sJ6boyGK8NC0v8Jih7NnCdT+9ML+3jn3P5F3TeXdSf\nVeYIm5oWAOTe3AjjKP8ARMb2RYACjg80/AcowD/dvRRjbwQmyucUNug2pXJynXpD\nNfx1IBmUmzSAT1Z5yNuY/f3VRBJvmIQ6Jpmef+g0/wUJpyS4SObguItyYlFPLqRH\nK1oKqNX/uV0GWWEQl6Lml986TzlHxc4ljtHBhjzlKYIYYZLWWipk4JiB8hxJcTK+\ncrgvclEQSxFlmAyoqxYFClrOOsPqZJdBhDTvoUWnnWuJLQt7DLHpyInp+S75Gg3o\n0zgHpt9m26B3YbjQGYMQlYmhl2VLQa+Ey0W8UZQXLcTvoRT4p+8crqr6cNNsxCyZ\nm08vBbEMIMvhBeLQvpM75oaMBmelegipFl2eelxVIHdGJWoyJSZQUdXN0uSidhZp\nI7AIgzhqK1Ku/IXK0OSXJonn+/9X/VI=\n-----END CERTIFICATE-----`;
 
-
-
 const VRPage = () => {
-    const [convertList, setConvertList] = useState([]);
     const [current, setCurrent] = useState("");
     const [convertStatus, setConvertStatus] = useState("");
     const [indexDir, setIndexDir] = useState("");
+    const [left, setLeft] = useState(0);
+    const [destDir, setDestDir] = useState("");
     const [form] = Form.useForm();
-
-    useEffect(() => {}, []);
-    var hashMap = {};
 
     const selectDirectory = async () => {
         let selected = await open({
@@ -55,32 +50,37 @@ const VRPage = () => {
             return;
         }
         form.setFieldValue("work_dir", selected);
+        let saveDir = await path.join(selected, "__preview__");
+        setDestDir(saveDir);
     };
 
     const convertJSONP = async () => {
         let workDir = form.getFieldValue("work_dir");
+        if (workDir == null || workDir == "") {
+            message("请选择VR数据目录");
+            return;
+        }
         setConvertStatus("indexing");
-        let fileList = await getFileList(workDir, "");
         setIndexDir("");
-        setConvertList(fileList);
-
-        let saveDir = await path.join(workDir, "__jsonp__");
+        let fileList = await getFileList(workDir, "");
+        if (fileList.length == 0) {
+            message("目录下没有VR数据");
+            return;
+        }
+        setLeft(fileList.length);
         setConvertStatus("converting");
-        hashMap = {};
-        await doConvert(fileList, workDir, saveDir);
-        console.log(hashMap);
+        let hashMap = await doConvert(fileList, workDir, destDir);
 
         // convert and write work.js
         let workJSON = await readWorkJSON(workDir);
         workJSON["certificate"] = defaultCerticate;
-        workJSON = convertWorkJSON(workJSON);
-        let workSavePath = await path.join(saveDir, "work.js");
+        workJSON = convertWorkJSON(workJSON, hashMap);
+        let workSavePath = await path.join(destDir, "work.js");
         await invoke.writeFile(
             workSavePath,
             "var workJSON = " + JSON.stringify(workJSON)
         );
-        await invoke.writeRsvrJsonpAsset(saveDir);
-
+        await invoke.writeRsvrJsonpAsset(destDir);
         setConvertStatus("success");
     };
 
@@ -99,7 +99,7 @@ const VRPage = () => {
         }
     };
 
-    const convertWorkJSON = (workJSON) => {
+    const convertWorkJSON = (workJSON, hashMap) => {
         let fileURL = lodash.get(workJSON, "model.file_url", "");
         if (fileURL.length > 0 && hashMap[fileURL] != undefined) {
             lodash.set(
@@ -116,7 +116,6 @@ const VRPage = () => {
         let prefix = lodash.get(workJSON, "model.material_base_url", "");
         for (var i in material_textures) {
             let hashKey = prefix + material_textures[i];
-            console.log(hashKey, hashMap[hashKey]);
             if (hashMap[hashKey] != undefined) {
                 material_textures[i] =
                     material_textures[i] + "." + hashMap[hashKey] + ".jsonp";
@@ -129,10 +128,6 @@ const VRPage = () => {
         let items = ["back", "front", "left", "right", "up", "down"];
         for (var i in panoList) {
             for (var j in items) {
-                console.log(
-                    panoList[i][items[j]],
-                    hashMap[panoList[i][items[j]]]
-                );
                 if (hashMap[panoList[i][items[j]]] != undefined) {
                     panoList[i][items[j]] =
                         panoList[i][items[j]] +
@@ -142,7 +137,6 @@ const VRPage = () => {
                 }
             }
         }
-        console.log(panoList);
         lodash.set(workJSON, "panorama.list", panoList);
         return workJSON;
     };
@@ -153,14 +147,12 @@ const VRPage = () => {
         }
         let retData = [];
         let realDir = await path.join(workDir, relativePath);
-        console.log(realDir);
         setIndexDir(realDir);
         let result = await invoke.simpleReadDir(realDir);
         if (!result.success) {
             return retData;
         }
         let files = result.data;
-        console.log(files);
         files = files.filter((item) => {
             if (item.name.startsWith("__") || item.name.startsWith(".")) {
                 return false;
@@ -190,27 +182,54 @@ const VRPage = () => {
     };
 
     const doConvert = async (list, srcDir, saveDir) => {
-        if (list.length == 0) {
+        let hashMap = {};
+        for (var i in list) {
+            let md5Str = common.md5(list[i]).substring(0, 8);
+            hashMap[list[i]] = md5Str;
+            let srcFile = await path.join(srcDir, list[i]);
+            let destFile = await path.join(saveDir, list[i]+ "." + md5Str + ".jsonp");
+            setCurrent(list[i]);
+            setLeft(list.length - i - 1);
+
+            let result = await invoke.fileExists(destFile);
+            if (result.success && result.data.exists) {
+                console.log(destFile, "exists");
+            } else {
+                try {
+                    await invoke.createJSONPFile(
+                        srcFile,
+                        destFile,
+                        md5Str
+                    );
+                } catch (error) {
+                    alert(error);
+                    return hashMap;
+                }
+            }
+        }
+        return hashMap;
+    };
+    const openDirectory = async () => {
+        let dir = form.getFieldValue("work_dir");
+        if (dir == null || dir == "") {
             return;
         }
-        let first = list.shift();
-        let md5Str = common.md5(first).substring(0, 8);
-        hashMap[first] = md5Str;
-        let srcFile = await path.join(srcDir, first);
-        let destFile = await path.join(saveDir, first);
+        await invoke.openPath(dir);
+    };
 
-        setCurrent(first);
-        try {
-            console.log(srcFile, destFile);
-            let ret = await invoke.createJSONPFile(
-                srcFile,
-                destFile + "." + md5Str + ".jsonp",
-                md5Str
-            );
-            await doConvert(list, srcDir, saveDir, hashMap);
-        } catch (error) {
-            console.log(error);
+    const openDestDirectory = async () => {
+        let dir = destDir;
+        if (dir == null || dir == "") {
+            return;
         }
+        await invoke.openPath(dir);
+    };
+    const openPreviewIndex = async () => {
+        if (destDir == null || destDir == "") {
+            return;
+        }
+        let indexFile = await path.join(destDir, "index.html");
+        await invoke.openPath(indexFile);
     };
 
     return (
@@ -218,15 +237,42 @@ const VRPage = () => {
             <Card style={{ marginBottom: "10px" }}>
                 <Form form={form} labelCol={{ span: 4 }}>
                     <Form.Item
-                        label="存储目录"
+                        label="VR数据目录"
                         field="work_dir"
                         rules={[{ required: true, message: "请选择目录" }]}
+                        style={{ marginBottom: 0 }}
                     >
-                        <Input.Search
-                            searchButton={"选择目录"}
-                            placeholder="请选择目录"
-                            onSearch={selectDirectory}
-                        />
+                        <Row gutter={10}>
+                            <Col span={15}>
+                                <Form.Item
+                                    rules={[{ required: true }]}
+                                    field="work_dir"
+                                >
+                                    <Input placeholder="请选择目录" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={9}>
+                                <Space>
+                                    <Button
+                                        onClick={selectDirectory}
+                                        type={"outline"}
+                                    >
+                                        选择
+                                    </Button>
+                                    <Button
+                                        onClick={openDirectory}
+                                        type={"outline"}
+                                    >
+                                        打开
+                                    </Button>
+                                </Space>
+                            </Col>
+                        </Row>
+                    </Form.Item>
+                    <Form.Item label="转换之后存储目录">
+                        <Link onClick={openDestDirectory} type="text">
+                            {destDir}
+                        </Link>
                     </Form.Item>
                     <Form.Item wrapperCol={{ offset: 4 }}>
                         <Space>
@@ -257,20 +303,20 @@ const VRPage = () => {
                 <Alert
                     style={{ marginBottom: 20 }}
                     type="success"
-                    content="转换成功"
+                    content={<>转换成功， <Link onClick={openPreviewIndex} type="text">
+                            浏览器查看
+                        </Link></>}
                 />
             ) : null}
 
             {convertStatus == "converting" && (
                 <Card>
-                    <div>
-                        <Statistic
-                            title=" 剩余转换项"
-                            value={convertList.length}
-                            style={{ marginRight: 60 }}
-                            extra={<>正在转换：{current}</>}
-                        />
-                    </div>
+                    <Statistic
+                        title=" 剩余转换项"
+                        value={left}
+                        style={{ marginRight: 60 }}
+                        extra={<>正在转换：{current}</>}
+                    />
                 </Card>
             )}
         </>

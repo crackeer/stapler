@@ -17,7 +17,6 @@ import {
     Checkbox,
     Statistic,
     Radio,
-    Progress
 } from "@arco-design/web-react";
 import common from "@/util/common";
 import lodash from "lodash";
@@ -29,12 +28,10 @@ const RadioGroup = Radio.Group;
 const CheckboxGroup = Checkbox.Group;
 const CubeSizes = ["2048", "4096", "6144"];
 
-
 const VRPage = () => {
     const [observerCount, setObserverCount] = useState(0);
     const [downloadList, setDownloadList] = useState([]);
     const [current, setCurrent] = useState("");
-    const [currentIndex, setCurrentIndex] = useState(0);
     const [downloadStatus, setDownloadStatus] = useState("");
     const [fileCount, setFileCount] = useState(0);
     var editor = null;
@@ -42,29 +39,27 @@ const VRPage = () => {
 
     useEffect(() => {
         database.getPageInitData("work", "default").then((result) => {
-            if(result != null) {
+            if (result != null) {
                 console.log(result);
                 form.setFieldsValue({
                     cube_size: result.cube_size,
                     download_dir: result.download_dir,
                     download_layers: result.download_layers,
-                })
+                });
                 setTimeout(() => {
-                    editor.set( result.work)
-                }, 30)
+                    editor.set(result.work);
+                }, 30);
             } else {
                 form.setFieldValue("cube_size", [CubeSizes[0]]);
                 form.setFieldValue("download_layers", 1);
             }
-        })
+        });
         form.setFieldValue("cube_size", [CubeSizes[0]]);
     }, []);
 
-
-
     const onJSONEditorReady = (target) => {
         editor = target;
-        console.log('onJSONEditorReady', editor)
+        console.log("onJSONEditorReady", editor);
     };
 
     const loadJSON = async () => {
@@ -143,12 +138,16 @@ const VRPage = () => {
         }
 
         console.log("downloadLayers", parseInt(downloadLayers));
-        await database.updatePageInitData("work", "default", JSON.stringify({
-            work: jsonValue,
-            cube_size: cubeSizes,
-            download_dir: downloadDir,
-            download_layers: parseInt(downloadLayers),
-        }));
+        await database.updatePageInitData(
+            "work",
+            "default",
+            JSON.stringify({
+                work: jsonValue,
+                cube_size: cubeSizes,
+                download_dir: downloadDir,
+                download_layers: parseInt(downloadLayers),
+            })
+        );
         let cubeList = getCubeList(jsonValue, cubeSizes);
         let modelList = getModelList(jsonValue, baseURL);
         let layers = [];
@@ -157,21 +156,29 @@ const VRPage = () => {
             console.log(layers);
         } else {
             lodash.set(newWorkJson, "model.layers", []);
-            if(newWorkJson.model != undefined && newWorkJson.model.tiles != undefined) {
-                delete newWorkJson.model.tiles
+            if (
+                newWorkJson.model != undefined &&
+                newWorkJson.model.tiles != undefined
+            ) {
+                delete newWorkJson.model.tiles;
             }
         }
 
         // tileset文件下载 + 解析
         let totalData = [...cubeList, ...modelList];
-       
+        setFileCount(totalData.length);
         if (layers.length > 0) {
             setDownloadStatus("indexing");
-            let  tileSetFiles = await parseTitleFiles(layers, baseURL, downloadDir, totalData.length);
+            let tileSetFiles = await parseTitleFiles(
+                layers,
+                baseURL,
+                downloadDir,
+                totalData.length
+            );
             totalData.push(...tileSetFiles);
         }
-         setDownloadList(totalData);
-        
+        setDownloadList(totalData);
+
         setDownloadStatus("downloading");
         await downloadResource(totalData, baseURL, downloadDir);
         console.log("downloadResourceEnd", downloadDir);
@@ -179,7 +186,7 @@ const VRPage = () => {
         await invoke.writeFile(workJsonSave, JSON.stringify(newWorkJson));
         setDownloadList([]);
         setDownloadStatus("success");
-    }; 
+    };
 
     const parseTitleFiles = async (files, baseURL, saveDir, total) => {
         let tileSetFiles = [];
@@ -189,6 +196,7 @@ const VRPage = () => {
                 setCurrent(files[i]);
                 let dest = await path.join(saveDir, files[i]);
                 let result = await doDownloadJson(baseURL + files[i], dest);
+                console.log(baseURL + files[i], result);
                 let currentFile = files[i];
                 if (result !== false) {
                     let jsonData = JSON.parse(result);
@@ -197,22 +205,23 @@ const VRPage = () => {
                         if (data[i].endsWith(".json")) {
                             jsonFiles.push(comparePath(currentFile, data[i]));
                         } else {
-                            tileSetFiles.push(comparePath(currentFile, data[i]));
+                            tileSetFiles.push(
+                                comparePath(currentFile, data[i])
+                            );
                             total = total + 1;
                             setFileCount(total);
                         }
                     }
                 }
             }
-            files = []
+            files = [];
             if (jsonFiles.length > 0) {
                 files = jsonFiles;
                 jsonFiles = [];
             }
         } while (files.length > 0);
         return tileSetFiles;
-    }
-
+    };
 
     const getModelList = (jsonValue, baseUL) => {
         let retData = [];
@@ -260,18 +269,22 @@ const VRPage = () => {
         let retData = [];
         let tilesetURLs = [];
         let layers = lodash.get(jsonValue, "model.layers", []);
-        let b3md_mappings_url = lodash.get(jsonValue, "model.tiles.b3md_mappings_url", '')
-        let tileset_url = lodash.get(jsonValue, "model.tiles.tileset_url", '')
+        let b3md_mappings_url = lodash.get(
+            jsonValue,
+            "model.tiles.b3md_mappings_url",
+            ""
+        );
+        let tileset_url = lodash.get(jsonValue, "model.tiles.tileset_url", "");
         if (layers == null) {
             layers = [];
         }
-        if(b3md_mappings_url.length > 0) {
-            tilesetURLs.push(b3md_mappings_url)
+        if (b3md_mappings_url.length > 0) {
+            tilesetURLs.push(b3md_mappings_url);
         }
-        if(tileset_url.length > 0) {
-            tilesetURLs.push(tileset_url)
+        if (tileset_url.length > 0) {
+            tilesetURLs.push(tileset_url);
         }
-        console.log(tilesetURLs)
+        console.log(tilesetURLs);
 
         for (var i in layers) {
             tilesetURLs.push(layers[i].tileset_url);
@@ -303,7 +316,7 @@ const VRPage = () => {
         if (fullURL.indexOf("/lod/") != -1) {
             let parts = fullURL.split("/lod/");
             return "lod/" + parts[parts.length - 1];
-        } 
+        }
         return fullURL.replace(baseUrl, "");
     };
 
@@ -311,9 +324,9 @@ const VRPage = () => {
         for (var i in list) {
             let fullURL = baseUL + list[i];
             let dest = await path.join(saveDir, list[i]);
-            setCurrentIndex(parseInt(i));
             setCurrent(list[i]);
-            await doDownload(fullURL, dest)
+            setFileCount(list.length - i - 1);
+            await doDownload(fullURL, dest);
         }
     };
 
@@ -377,7 +390,7 @@ const VRPage = () => {
         let layers = lodash.get(data, "model.layers", []);
         delete data.title_picture_url;
         delete data.picture_url;
-        if (layers != null &&  layers.length > 0) {
+        if (layers != null && layers.length > 0) {
             for (var i in layers) {
                 if (common.startWithProtocol(layers[i].tileset_url)) {
                     layers[i]["tileset_url"] = removeBaseURL(
@@ -427,14 +440,18 @@ const VRPage = () => {
         }
         return data;
     };
+    const openDirectory = async () => {
+        let dir = form.getFieldValue("download_dir");
+        if (dir == null || dir == "") {
+            return;
+        }
+        await invoke.openPath(dir);
+    };
 
     return (
         <>
             <Card style={{ marginBottom: "10px" }}>
-                <Form
-                    form={form}
-                    labelCol={{ span: 4 }}
-                >
+                <Form form={form} labelCol={{ span: 4 }}>
                     <Form.Item field="json" label="work.json">
                         <Row gutter={10}>
                             <Col span={21}>
@@ -476,14 +493,35 @@ const VRPage = () => {
                     </Form.Item>
                     <Form.Item
                         label="存储目录"
-                        field="download_dir"
                         rules={[{ required: true, message: "请选择目录" }]}
+                        style={{ marginBottom: 0 }}
                     >
-                        <Input.Search
-                            searchButton={"选择目录"}
-                            placeholder="请选择目录"
-                            onSearch={selectDirectory}
-                        />
+                        <Row gutter={10}>
+                            <Col span={15}>
+                                <Form.Item
+                                    rules={[{ required: true }]}
+                                    field="download_dir"
+                                >
+                                    <Input placeholder="请选择目录" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={9}>
+                                <Space>
+                                    <Button
+                                        onClick={selectDirectory}
+                                        type={"outline"}
+                                    >
+                                        选择
+                                    </Button>
+                                    <Button
+                                        onClick={openDirectory}
+                                        type={"outline"}
+                                    >
+                                        打开
+                                    </Button>
+                                </Space>
+                            </Col>
+                        </Row>
                     </Form.Item>
                     <Form.Item wrapperCol={{ offset: 4 }}>
                         <Space>
@@ -508,8 +546,7 @@ const VRPage = () => {
                 />
             ) : null}
 
-
-             {downloadStatus == "indexing" ? (
+            {downloadStatus == "indexing" ? (
                 <Card>
                     <Alert
                         style={{ marginBottom: 20 }}
@@ -528,21 +565,12 @@ const VRPage = () => {
 
             {downloadStatus == "downloading" ? (
                 <Card>
-                    <div>
-                        <Statistic
-                            title="下载进度"
-                            value={currentIndex}
-                            renderFormat={(value) => {
-                                return `${value + 1}/${downloadList.length}`;
-                            }}
-                            style={{ marginRight: 60 }}
-                            extra={<>正在下载：{current}</>}
-                        />
-                         <Progress
-                                    percent={((currentIndex + 1) / downloadList.length).toFixed(2) * 100}
-                                     status='warning'
-                                />
-                    </div>
+                    <Statistic
+                        title="剩余下载项"
+                        value={fileCount}
+                        style={{ marginRight: 60 }}
+                        extra={<>正在下载：{current}</>}
+                    />
                 </Card>
             ) : null}
         </>

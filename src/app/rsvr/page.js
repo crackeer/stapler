@@ -21,6 +21,52 @@ import invoke from "@/util/invoke.js";
 import lodash from "lodash";
 import database from "@/util/database";
 import { message, save } from "@tauri-apps/plugin-dialog";
+
+
+const multiJsonGet = (data, keys) => {
+    for(let i = 0; i < keys.length; i++) {
+        let value = jsonGet(data, keys[i]);
+        if(value != null) {
+            return value;
+        }
+    }
+    return null;
+}
+
+const jsonGet = (data, key) => {
+    if(data == null) {
+        return null;
+    }
+    if(key.length < 1) {
+        return null
+    }
+
+    console.log(typeof data);
+    console.log(data);
+    if (typeof data === 'object' && data.length == undefined ) {
+        if(data[key] != undefined) {
+            return data[key];
+        } else {
+            let keys = Object.keys(data);
+            for(let i = 0; i < keys.length; i++) {
+                let value = jsonGet(data[keys[i]], key);
+                if(value != null) {
+                    return value;
+                }
+            }
+        }
+    }
+
+    if (typeof data === 'object' && data.length != undefined) {
+        for(let i = 0; i < data.length; i++) {
+           let value = jsonGet(data[i], key);
+            if(value != null) {
+              return value;
+            }
+        }
+    }
+    return null;
+}
 const VRPage = () => {
     const [title, setTitle] = useState("");
     const [linkInfo, setLinkInfo] = useState(null);
@@ -39,7 +85,7 @@ const VRPage = () => {
                 form.setFieldsValue({
                     url: result.url,
                 })
-                getWorkJSON();
+                //getWorkJSON();
             }
         })
     }, []);
@@ -65,34 +111,40 @@ const VRPage = () => {
             setLinkInfo(null);
             editor.set({});
             let res = await invoke.parseJSCode(url);
+            res = res.filter((item) => item.indexOf("_signature") > 0);
+            if(res.length == 0) {
+                message("未找到有效数据");
+                return;
+            }
             await database.updatePageInitData("rsvr", "default", JSON.stringify({
                 url: url,
             }));
             setLoading(false);
-            for (var i in res) {
-                if (res[i].indexOf("_signature") > 0) {
-                    let data = formatJSON(res[i]);
-                    setLinkInfo(data.initData.shortLinkDetail);
-                    console.log(data.initData.vr.works);
-                    setWorks(data.initData.vr.works);
-                    setCurrentWorkIndex(0);
-                    editor.set(data.initData.vr.works[0].work);
-                    setObserverCount(
-                        lodash.get(
-                            data,
-                            "initData.vr.works[0].work.panorama.list",
-                            []
-                        ).length
-                    );
-                    setTitle(
-                        lodash.get(
-                            data,
-                            "initData.vrConfig.config.openScene.work.title"
-                        )
-                    );
-                    setFiveInitData(JSON.stringify(data.fiveInitial));
-                }
+            let data = formatJSON(res[0]);
+            if(data == null) {
+                message("未找到有效数据");
+                return;
             }
+            let initData = multiJsonGet(data, ["initialData", "initData"]);
+            let fiveInitData = multiJsonGet(data, ["fiveInitial"]);
+            setLinkInfo(initData.shortLinkDetail);
+            setWorks(initData.vr.works);
+            setCurrentWorkIndex(0);
+            editor.set(initData.vr.works[0].work);
+            setObserverCount(
+                lodash.get(
+                    initData,
+                    "vr.works[0].work.panorama.list",
+                    []
+                ).length
+            );
+            setTitle(
+                lodash.get(
+                    initData,
+                    "vrConfig.config.openScene.work.title"
+                )
+            );
+            setFiveInitData(JSON.stringify(fiveInitData));
         } catch (e) {
             message(e);
             console.log(e);
@@ -105,10 +157,25 @@ const VRPage = () => {
             "JSON.stringify"
         );
         let jsonStr = eval(expression);
+        
         try {
             let json = JSON.parse(jsonStr)[1];
+            console.log(json);
             let jsonObject = JSON.parse(json.substr(json.indexOf(":") + 1));
-            return lodash.get(jsonObject, "1.3.children.1.3");
+            console.log(jsonObject);
+
+            return jsonObject;
+            let value = jsonGet(jsonObject, "initialData");
+            if(value != null) {
+                return value;
+            }
+
+            // value = jsonGet(jsonObject, "initData");
+            // if(value != null) {
+            //     return value;
+            // }
+            return null;
+
         } catch (e) {
             console.log(e);
             return {};

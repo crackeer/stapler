@@ -203,7 +203,7 @@ const DownloadPage = () => {
                     labelCol={{ span: 4 }}
                     onValuesChange={formChange}
                 >
-                    <Form.Item label="URL链接">
+                    <Form.Item label="URL链接" style={{ marginBottom: 0 }}>
                         <Row gutter={10}>
                             <Col span={21}>
                                 <Form.Item
@@ -223,7 +223,7 @@ const DownloadPage = () => {
                             </Col>
                         </Row>
                     </Form.Item>
-                    <Form.Item label="存储目录">
+                    <Form.Item label="存储目录" style={{ marginBottom: 0 }}>
                         <Row gutter={10}>
                             <Col span={15}>
                                 <Form.Item
