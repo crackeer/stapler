@@ -21,7 +21,7 @@ const pages = {
     "/Redis" : "Redis",
     "/Kafka" : "Kafka",
     "/ftp" : "FTP文件",
-    "/ssh" : "SSH服务器",
+    "/server" : "SSH服务器",
     "/download" : "http下载",
     "/rsvr" : "VR解析",
     "/work" : "VR下载",

@@ -1,5 +1,6 @@
 import Database from "@tauri-apps/plugin-sql";
 import dayjs from "dayjs";
+import lodash from "lodash";
 
 const getMySQL = async (host, username, password, database) => {
     try {
@@ -107,6 +108,10 @@ var getServerList = async () => {
     return formatList(data)
 };
 
+var createServer = async (title, content) => {
+    return await createContent(title, content, "server", "tag");
+};
+
 export default {
     deleteContent,
     getContent,
@@ -115,5 +120,6 @@ export default {
     getPageInitData,
     updatePageInitData,
     getMySQL,
-    getServerList
+    getServerList,
+    createServer,
 };
