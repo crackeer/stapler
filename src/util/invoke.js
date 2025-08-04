@@ -89,32 +89,6 @@ var fileExists = async (filePath) => {
     return result;
 };
 
-var addDownloadWorkTask = async (dir, work_json) => {
-    let result = await invoke("add_work_download_task", {
-        dir: dir,
-        workJson: work_json,
-    });
-    return result;
-};
-
-var queryDownloadTask = async (dir, work_json) => {
-    let result = await invoke("query_all_task_state", {});
-    return result;
-};
-
-var addProjectDownload = async (dir, project_id, db_version) => {
-    let result = await invoke("add_project_download_task", {
-        dir: dir,
-        projectId: project_id,
-        dbVersion: db_version,
-    });
-    return result;
-};
-
-var queryProjectDownloadTask = async (dir, project_id, db_version) => {
-    let result = await invoke("query_project_download_state");
-    return result;
-};
 
 var parseJSCode = async (url) => {
     let result = await invoke("parse_js_code", {
@@ -144,15 +118,6 @@ var splitMySQLLine = (dataString) => {
     return parts;
 };
 
-var updateOuterHost = async (host, privateKeyPath, oldHost, newHost) => {
-    let result = await invoke("update_outer_host", {
-        host,
-        privateKeyPath,
-        oldHost,
-        newHost,
-    });
-    return result;
-};
 
 var listFiles = async (host, privateKeyPath, path) => {
     let result = await invoke("list_files", {
@@ -173,12 +138,21 @@ var downloadRemoteFile = async (host, privateKeyPath, path, localSavePath) => {
     return result;
 };
 
-var uploadRemoteFile = async (host, privateKeyPath, path, localFile) => {
-    let result = await invoke("upload_remote_file", {
+var sshConnectServer = async (host, port, username, password) => {
+    return await invoke("connect_server", {
         host,
-        privateKeyPath,
-        path,
+        port,
+        user: username,
+        authType: "password",
+        authConfig: password,
+    });
+};
+
+var uploadRemoteFile = async (sessionKey, localFile, remoteFile) => {
+    let result = await invoke("upload_remote_file", {
+        sessionKey,
         localFile,
+        remoteFile
     });
     return result;
 };
@@ -323,14 +297,9 @@ export {
     deleteFolder,
     renameFile,
     fileExists,
-    addDownloadWorkTask,
-    queryDownloadTask,
-    addProjectDownload,
-    queryProjectDownloadTask,
     parseJSCode,
     parseHTMLTitle,
     getLocalConfig,
-    updateOuterHost,
     listFiles,
     downloadRemoteFile,
     uploadRemoteFile,
@@ -352,7 +321,8 @@ export {
     evalJsOnPage,
     createJSONPFile,
     writeRsvrJsonpAsset,
-    openPath
+    openPath,
+    sshConnectServer,
 };
 
 export default {
@@ -368,14 +338,9 @@ export default {
     deleteFolder,
     renameFile,
     fileExists,
-    addDownloadWorkTask,
-    queryDownloadTask,
-    addProjectDownload,
-    queryProjectDownloadTask,
     parseJSCode,
     parseHTMLTitle,
     getLocalConfig,
-    updateOuterHost,
     listFiles,
     downloadRemoteFile,
     uploadRemoteFile,
@@ -397,5 +362,6 @@ export default {
     evalJsOnPage,
     createJSONPFile,
     writeRsvrJsonpAsset,
-    openPath
+    openPath,
+    sshConnectServer
 };
