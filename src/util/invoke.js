@@ -104,19 +104,7 @@ var parseHTMLTitle = async (url) => {
     return result;
 };
 
-var getLocalConfig = async (host, privateKeyPath) => {
-    let result = await invoke("get_local_config", {
-        host,
-        privateKeyPath,
-    });
-    return splitMySQLLine(result);
-};
 
-var splitMySQLLine = (dataString) => {
-    let parts = dataString.split("\n");
-    parts.shift();
-    return parts;
-};
 
 
 var listFiles = async (host, privateKeyPath, path) => {
@@ -154,6 +142,16 @@ var uploadRemoteFile = async (sessionKey, localFile, remoteFile) => {
         localFile,
         remoteFile
     });
+    return result;
+};
+
+var getUploadRemoteProgress = async () => {
+    let result = await invoke("get_upload_remote_progress");
+    return result;
+};
+
+var queryUploadRemoteProgress = async () => {
+    let result = await invoke("get_upload_remote_progress");
     return result;
 };
 
@@ -299,7 +297,6 @@ export {
     fileExists,
     parseJSCode,
     parseHTMLTitle,
-    getLocalConfig,
     listFiles,
     downloadRemoteFile,
     uploadRemoteFile,
@@ -323,6 +320,8 @@ export {
     writeRsvrJsonpAsset,
     openPath,
     sshConnectServer,
+    getUploadRemoteProgress,
+    queryUploadRemoteProgress,
 };
 
 export default {
@@ -340,7 +339,6 @@ export default {
     fileExists,
     parseJSCode,
     parseHTMLTitle,
-    getLocalConfig,
     listFiles,
     downloadRemoteFile,
     uploadRemoteFile,
@@ -363,5 +361,7 @@ export default {
     createJSONPFile,
     writeRsvrJsonpAsset,
     openPath,
-    sshConnectServer
+    sshConnectServer,
+    getUploadRemoteProgress,
+    queryUploadRemoteProgress,
 };

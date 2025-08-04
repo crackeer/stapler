@@ -1,11 +1,12 @@
 'use client'
 import React, { useEffect, useState } from "react";
 import { IconPlus, IconDelete } from "@arco-design/web-react/icon"
-import { Modal, Card, Button, Form, Input, Table, Space, Grid, Tabs, Message, Divider, List, Tag } from "@arco-design/web-react"
+import { Modal, Card, Button, Form, Input, Table, Space, Grid, Tabs, Collapse, Divider, List, Tag, Progress } from "@arco-design/web-react"
 import database from "@/util/database";
 import { confirm, message, open } from "@tauri-apps/plugin-dialog";
 import {basename} from "@tauri-apps/api/path"
 import invoke from "@/util/invoke";
+import { sleep } from "@/util/common";
 const FormItem = Form.Item;
 const TabPane = Tabs.TabPane;
 const Row = Grid.Row;
@@ -73,9 +74,10 @@ export default function App() {
     const [serverList, setServerList] = useState([])
     const [initValue, setInitValue] = useState(null)
     const [uploadFileList, setUploadFileList] = useState([])
-    const [remoteDir, setRemoteDir] = useState('')
+    const [remoteDir, setRemoteDir] = useState('/tmp')
     const [selectServer, setSelectServer] = useState([])
     const [sessionMap, setSessionMap] = useState({})
+    const [uploadProgress, setUploadProgress] = useState({})
     useEffect(() => {
         getServerList()
     }, [])
@@ -187,13 +189,54 @@ export default function App() {
         if(result == false) {
             return
         }
+        let uploadProgress = {}
         for(let i = 0; i < selectServer.length; i++) {
+            uploadProgress[selectServer[i].id] = []
+            setUploadProgress(uploadProgress)
+            let serverInfo = selectServer[i]
             for(let j = 0; j < uploadFileList.length; j++) {
-                let item = uploadFileList[j]
-                let result = await singleUploadFiles(selectServer[i], item, remoteDir)
-                if(result == false) {
-                    return
+                let result = await singleUploadFiles(selectServer[i],  uploadFileList[j], remoteDir)
+                if(result.success == false) {
+                    uploadProgress[selectServer[i].id].push({
+                        file: uploadFileList[j],
+                        status : 'failure',
+                        message: result.message,
+                        progress : 0,
+                    })
+                } else {
+                    uploadProgress[selectServer[i].id].push({
+                        file: uploadFileList[j],
+                        status : 'uploading',
+                        message: result.message,
+                        progress : 0,
+                    })
                 }
+                console.log(uploadProgress)
+                setUploadProgress(uploadProgress)
+                let finished = false
+                
+                do {
+                    try {
+                        console.log("query upload progress")
+                        let query = await invoke.queryUploadRemoteProgress()
+                        console.log("result", query)
+                        uploadProgress[serverInfo.id][j].progress = (parseInt(query.upload_size) / parseInt(query.total_size) * 100).toFixed(2)
+                        uploadProgress[serverInfo.id][j].status = query.status
+                        if(query.status != 'uploading') {
+                            finished = true
+                        }
+                    } catch (e) {
+                        console.log("exception", e)
+                        finished = true
+                        uploadProgress[serverInfo.id][j].status = 'failure'
+                        uploadProgress[serverInfo.id][j].message = '上传失败' + e.message
+                    }
+                    setUploadProgress(prev => ({
+                        ...prev,
+                        [serverInfo.id]: uploadProgress[serverInfo.id],
+                    }))
+                    await sleep(2000)
+                } while(!finished)
             }
         }
         
@@ -202,17 +245,24 @@ export default function App() {
     const singleUploadFiles = async (serverInfo, file, remoteDir) => {
         if(sessionMap[serverInfo.id] == null) {
             message('服务器连接失败：' + serverInfo.title)
-            return false
+            return {
+                success: false,
+                message: '服务器连接失败：' + serverInfo.title
+            }
         }
         let name = await basename(file)
         let remoteFile = remoteDir + '/' + name
         try {
             let result = await invoke.uploadRemoteFile(sessionMap[serverInfo.id], file, remoteFile)
-            console.log(result, file, remoteFile)
-            return true
+            return {
+                success: true,
+                message: '正在上传中'
+            }
         } catch (e) {
-            message('上传文件失败')
-            return false
+            return {
+                success: false,
+                message: '上传失败'
+            }
         }
        
     }
@@ -225,18 +275,16 @@ export default function App() {
                 continue
             }
             try {
-                console.log(item)
                 let session = await invoke.sshConnectServer(
                     item.server,
                     item.port,
                     item.user,
                     item.password,
                 )
-                console.log(session)
                 sessions[item.id] = session
             } catch (e) {
                 console.log(e)
-                message('连接服务器失败')
+                message('连接服务器失败：' + item.title)
                 return false
             }
         }
@@ -257,7 +305,6 @@ export default function App() {
         if (files == null) {
             return
         }
-
         setUploadFileList([files, ...uploadFileList])
     }
 
@@ -314,11 +361,31 @@ export default function App() {
                             <Button type="outline" onClick={uploadFiles}>上传</Button>
                         </Col>
                     </Row>
+                    <Collapse key={1} style={{ marginTop: '15px' }}>
+                     {
+                        selectServer.map(item => {
+                            if(uploadProgress[item.id] == undefined) {
+                                return null
+                            }
+                            return <Collapse.Item header={item.title} name={item.id} key={item.id}>
+                                <List
+                                    size='small'
+                                    dataSource={uploadProgress[item.id]}
+                                    rowKey={(record) => record.file}
+                                    render={(item1, index) => <List.Item key={index}>
+                                        <span>{item1.file}</span>
+                                        <Progress percent={item1.progress} status={item1.status == 'success' ? 'success' : 'warning'} />
+                                    </List.Item>}
+                                />
+                            </Collapse.Item>
+                        })
+                      }
+                    </Collapse>
                 </TabPane>
                 <TabPane key='3' title='下载文件'>
-
                 </TabPane>
             </Tabs>
+           
         </Card>
     </div>
 }
