@@ -4,7 +4,7 @@ import { IconPlus, IconDelete } from "@arco-design/web-react/icon"
 import { Modal, Card, Button, Form, Input, Table, Space, Grid, Tabs, Collapse, Divider, List, Tag, Progress } from "@arco-design/web-react"
 import database from "@/util/database";
 import { confirm, message, open } from "@tauri-apps/plugin-dialog";
-import {basename} from "@tauri-apps/api/path"
+import { basename, join } from "@tauri-apps/api/path"
 import invoke from "@/util/invoke";
 import { sleep } from "@/util/common";
 const FormItem = Form.Item;
@@ -80,6 +80,8 @@ export default function App() {
     const [currentServerID, setCurrentServerID] = useState(0)
     const [uploadProgress, setUploadProgress] = useState({})
     const [remoteFile, setRemoteFile] = useState('')
+    const [localDir, setLocalDir] = useState('')
+    const [downloadProgress, setDownloadProgress] = useState([])
     useEffect(() => {
         getServerList()
     }, [])
@@ -174,11 +176,11 @@ export default function App() {
     }
 
     const uploadFiles = async () => {
-        if(uploadFileList.length == 0) {
+        if (uploadFileList.length == 0) {
             message('请选择文件')
             return
         }
-        if(selectServer.length == 0) {
+        if (selectServer.length == 0) {
             message('请选择服务器')
             return
         }
@@ -187,37 +189,37 @@ export default function App() {
             message('请输入远程目录')
             return
         }
-        let result =  await connectServers()
-        if(result == false) {
+        let result = await connectServers()
+        if (result == false) {
             return
         }
         let uploadProgress = {}
-        for(let i = 0; i < selectServer.length; i++) {
+        for (let i = 0; i < selectServer.length; i++) {
             uploadProgress[selectServer[i].id] = []
             setUploadProgress(uploadProgress)
             setCurrentServerID(selectServer[i].id)
             let serverInfo = selectServer[i]
-            for(let j = 0; j < uploadFileList.length; j++) {
-                let result = await singleUploadFiles(selectServer[i],  uploadFileList[j], remoteDir)
-                if(result.success == false) {
+            for (let j = 0; j < uploadFileList.length; j++) {
+                let result = await singleUploadFiles(selectServer[i], uploadFileList[j], remoteDir)
+                if (result.success == false) {
                     uploadProgress[selectServer[i].id].push({
                         file: uploadFileList[j],
-                        status : 'failure',
+                        status: 'failure',
                         message: result.message,
-                        progress : 0,
+                        progress: 0,
                     })
                 } else {
                     uploadProgress[selectServer[i].id].push({
                         file: uploadFileList[j],
-                        status : 'transferring',
+                        status: 'transferring',
                         message: result.message,
-                        progress : 0,
+                        progress: 0,
                     })
                 }
                 console.log(uploadProgress)
                 setUploadProgress(uploadProgress)
                 let finished = false
-                
+
                 do {
                     try {
                         console.log("query upload progress")
@@ -225,7 +227,7 @@ export default function App() {
                         console.log("result", query)
                         uploadProgress[serverInfo.id][j].progress = (parseInt(query.current) / parseInt(query.total) * 100).toFixed(2)
                         uploadProgress[serverInfo.id][j].status = query.status
-                        if(query.status != 'transferring') {
+                        if (query.status != 'transferring') {
                             finished = true
                         }
                     } catch (e) {
@@ -239,14 +241,75 @@ export default function App() {
                         [serverInfo.id]: uploadProgress[serverInfo.id],
                     }))
                     await sleep(300)
-                } while(!finished)
+                } while (!finished)
             }
         }
         message('全部上传完成')
     }
 
+    const downloadFile = async () => {
+        if (remoteFile.length == 0) {
+            message('请填写远程文件')
+            return
+        }
+        if (selectServer.length == 0) {
+            message('请选择服务器')
+            return
+        }
+
+        let result = await connectServers()
+        if (result == false) {
+            return
+        }
+        let downloadProgress = []
+        for (let i = 0; i < selectServer.length; i++) {
+            let result = await singleDownloadFile(selectServer[i], remoteFile, localDir)
+            if (result.success == false) {
+                downloadProgress.push({
+                    server: selectServer[i],
+                    local_file: result.local_file,
+                    status: 'failure',
+                    message: result.message,
+                    progress: 0,
+                })
+            } else {
+                downloadProgress.push({
+                    server: selectServer[i],
+                    local_file: result.local_file,
+                    status: 'transferring',
+                    message: result.message,
+                    progress: 0,
+                })
+            }
+            console.log(downloadProgress)
+            setDownloadProgress(downloadProgress)
+            let finished = false
+
+            do {
+                try {
+                    console.log("query upload progress")
+                    let query = await invoke.getTransferProgress()
+                    console.log("result", query)
+                    downloadProgress[i].progress = (parseInt(query.current) / parseInt(query.total) * 100).toFixed(2)
+                    downloadProgress[i].status = query.status
+                    if (query.status != 'transferring') {
+                        finished = true
+                    }
+                } catch (e) {
+                    console.log("exception", e)
+                    finished = true
+                    downloadProgress[i].status = 'failure'
+                    downloadProgress[i].message = '下载失败' + e.message
+                }
+                setDownloadProgress([...downloadProgress])
+                await sleep(300)
+            } while (!finished)
+        }
+        message('全部下载完成')
+    }
+
     const singleUploadFiles = async (serverInfo, file, remoteDir) => {
-        if(sessionMap[serverInfo.id] == null) {
+        if (sessionMap[serverInfo.id] == null) {
             message('服务器连接失败：' + serverInfo.title)
             return {
                 success: false,
@@ -269,11 +332,39 @@ export default function App() {
         }
     }
 
+    const singleDownloadFile = async (serverInfo, remoteFile, localDir) => {
+        if (sessionMap[serverInfo.id] == null) {
+            message('服务器连接失败：' + serverInfo.title)
+            return {
+                success: false,
+                message: '服务器连接失败：' + serverInfo.title,
+                local_file: '',
+            }
+        }
+        let parts = remoteFile.split('/')
+        let name = parts[parts.length - 1]
+        let localFile = await join(localDir, serverInfo.title + '-' + name)
+        try {
+            let result = await invoke.downloadRemoteFile(sessionMap[serverInfo.id], localFile, remoteFile)
+            return {
+                success: true,
+                message: '正在下载中',
+                local_file: localFile,
+            }
+        } catch (e) {
+            return {
+                success: false,
+                message: '下载失败' + e.message,
+                local_file: localFile,
+            }
+        }
+    }
+
     const connectServers = async () => {
         let sessions = sessionMap
-        for(let i = 0; i < selectServer.length; i++) {
+        for (let i = 0; i < selectServer.length; i++) {
             let item = selectServer[i]
-            if(item.id in sessionMap) {
+            if (item.id in sessionMap) {
                 continue
             }
             try {
@@ -309,6 +400,22 @@ export default function App() {
         }
         setUploadFileList([files, ...uploadFileList])
     }
+
+    const selectDirectory = async () => {
+        let selected = await open({
+            directory: true,
+            filters: [
+                {
+                    name: "File",
+                    extensions: [],
+                },
+            ],
+        });
+        if (selected == null) {
+            return;
+        }
+        setLocalDir(selected)
+    };
 
     return <div style={{ padding: "5px 10px" }}>
         <Divider orientation="left">
@@ -372,48 +479,71 @@ export default function App() {
                     <Collapse onChange={key => {
                         setCurrentServerID(key)
                     }} style={{ marginTop: '15px' }} activeKey={currentServerID}>
-                     {
-                        selectServer.map(item => {
-                            if(uploadProgress[item.id] == undefined) {
-                                return null
-                            }
-                            return <Collapse.Item header={item.title} name={item.id} key={item.id}>
-                                <List
-                                    size='small'
-                                    dataSource={uploadProgress[item.id]}
-                                    rowKey={(record) => record.file}
-                                    render={(item1, index) => <List.Item key={index}>
-                                        <span>{item1.file}</span>
-                                        <Progress percent={item1.progress} status={item1.status == 'success' ? 'success' : 'warning'} />
-                                    </List.Item>}
-                                />
-                            </Collapse.Item>
-                        })
-                      }
+                        {
+                            selectServer.map(item => {
+                                if (uploadProgress[item.id] == undefined) {
+                                    return null
+                                }
+                                return <Collapse.Item header={item.title} name={item.id} key={item.id}>
+                                    <List
+                                        size='small'
+                                        dataSource={uploadProgress[item.id]}
+                                        rowKey={(record) => record.file}
+                                        render={(item1, index) => <List.Item key={index}>
+                                            <span>{item1.file}</span>
+                                            <Progress percent={item1.progress} status={item1.status == 'success' ? 'success' : 'warning'} />
+                                        </List.Item>}
+                                    />
+                                </Collapse.Item>
+                            })
+                        }
                     </Collapse>
                 </TabPane>
                 <TabPane key='4' title='下载文件'>
-                    <Row gutter={10} style={{ marginTop: '20px' }}>
-                        <Col span={2} style={{ textAlign: 'right', paddingTop: '3px' }}>
-                            <strong>远程文件位置：</strong>
+                    <Row gutter={10} style={{ marginTop: '10px' }}>
+                        <Col span={2} style={{ textAlign: 'right', paddingTop: '4px' }}>
+                            <strong>远程文件：</strong>
                         </Col>
                         <Col span={12}>
-                            <Input placeholder="远程服务器文件夹" value={remoteFile} onChange={value => {
+                            <Input placeholder="文件路径" value={remoteFile} onChange={value => {
                                 setRemoteFile(value)
                             }} />
                         </Col>
+                    </Row>
+                    <Row gutter={10} style={{ marginTop: '10px' }}>
+                        <Col span={2} style={{ textAlign: 'right', paddingTop: '4px' }}>
+                            <strong>本地存放：</strong>
+                        </Col>
+                        <Col span={12}>
+                            <Input placeholder="本地文件夹" value={localDir} onChange={value => {
+                                setLocalDir(value)
+                            }} />
+                            <p>
+                                <Button type="outline" onClick={downloadFile}>开始下载</Button>
+                            </p> 
+                        </Col>
                         <Col span={4}>
-                            <Button type="outline" onClick={downloadRemoteFile}>下载</Button>
+                            <Button type="outline" onClick={selectDirectory}>选择文件夹</Button>
                         </Col>
                     </Row>
+
+                    <List
+                        size='small'
+                        dataSource={downloadProgress}
+                        rowKey={(record) => record.local_file}
+                        render={(item1, index) => <List.Item key={index}>
+                            <span>下载到：{item1.local_file}</span>
+                            <Progress percent={item1.progress} status={item1.status == 'success' ? 'success' : 'warning'} />
+                        </List.Item>}
+                    />
                 </TabPane>
-                 <TabPane key='5' title='加载k3s镜像'>
+                <TabPane key='5' title='加载k3s镜像'>
                     <p>
                         <Button type="outline" onClick={executeCmd}>加载</Button>
                     </p>
                 </TabPane>
             </Tabs>
-           
+
         </Card>
     </div>
 }

@@ -116,12 +116,11 @@ var listFiles = async (host, privateKeyPath, path) => {
     return result;
 };
 
-var downloadRemoteFile = async (host, privateKeyPath, path, localSavePath) => {
+var downloadRemoteFile = async (sessionKey, localFile, remoteFile) => {
     let result = await invoke("download_remote_file", {
-        host,
-        privateKeyPath,
-        path,
-        localSavePath,
+        sessionKey,
+        localFile,
+        remoteFile,
     });
     return result;
 };
