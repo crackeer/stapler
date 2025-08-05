@@ -145,15 +145,11 @@ var uploadRemoteFile = async (sessionKey, localFile, remoteFile) => {
     return result;
 };
 
-var getUploadRemoteProgress = async () => {
-    let result = await invoke("get_upload_remote_progress");
+var getTransferProgress = async () => {
+    let result = await invoke("get_transfer_remote_progress");
     return result;
 };
 
-var queryUploadRemoteProgress = async () => {
-    let result = await invoke("get_upload_remote_progress");
-    return result;
-};
 
 var deleteRemoteFile = async (host, privateKeyPath, path) => {
     let result = await invoke("remote_exec_cmd", {
@@ -320,8 +316,7 @@ export {
     writeRsvrJsonpAsset,
     openPath,
     sshConnectServer,
-    getUploadRemoteProgress,
-    queryUploadRemoteProgress,
+    getTransferProgress,
 };
 
 export default {
@@ -362,6 +357,5 @@ export default {
     writeRsvrJsonpAsset,
     openPath,
     sshConnectServer,
-    getUploadRemoteProgress,
-    queryUploadRemoteProgress,
+    getTransferProgress,
 };

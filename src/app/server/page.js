@@ -77,7 +77,9 @@ export default function App() {
     const [remoteDir, setRemoteDir] = useState('/tmp')
     const [selectServer, setSelectServer] = useState([])
     const [sessionMap, setSessionMap] = useState({})
+    const [currentServerID, setCurrentServerID] = useState(0)
     const [uploadProgress, setUploadProgress] = useState({})
+    const [remoteFile, setRemoteFile] = useState('')
     useEffect(() => {
         getServerList()
     }, [])
@@ -193,6 +195,7 @@ export default function App() {
         for(let i = 0; i < selectServer.length; i++) {
             uploadProgress[selectServer[i].id] = []
             setUploadProgress(uploadProgress)
+            setCurrentServerID(selectServer[i].id)
             let serverInfo = selectServer[i]
             for(let j = 0; j < uploadFileList.length; j++) {
                 let result = await singleUploadFiles(selectServer[i],  uploadFileList[j], remoteDir)
@@ -206,7 +209,7 @@ export default function App() {
                 } else {
                     uploadProgress[selectServer[i].id].push({
                         file: uploadFileList[j],
-                        status : 'uploading',
+                        status : 'transferring',
                         message: result.message,
                         progress : 0,
                     })
@@ -218,11 +221,11 @@ export default function App() {
                 do {
                     try {
                         console.log("query upload progress")
-                        let query = await invoke.queryUploadRemoteProgress()
+                        let query = await invoke.getTransferProgress()
                         console.log("result", query)
-                        uploadProgress[serverInfo.id][j].progress = (parseInt(query.upload_size) / parseInt(query.total_size) * 100).toFixed(2)
+                        uploadProgress[serverInfo.id][j].progress = (parseInt(query.current) / parseInt(query.total) * 100).toFixed(2)
                         uploadProgress[serverInfo.id][j].status = query.status
-                        if(query.status != 'uploading') {
+                        if(query.status != 'transferring') {
                             finished = true
                         }
                     } catch (e) {
@@ -235,11 +238,11 @@ export default function App() {
                         ...prev,
                         [serverInfo.id]: uploadProgress[serverInfo.id],
                     }))
-                    await sleep(2000)
+                    await sleep(300)
                 } while(!finished)
             }
         }
-        
+        message('全部上传完成')
     }
 
     const singleUploadFiles = async (serverInfo, file, remoteDir) => {
@@ -264,7 +267,6 @@ export default function App() {
                 message: '上传失败'
             }
         }
-       
     }
 
     const connectServers = async () => {
@@ -339,7 +341,13 @@ export default function App() {
                         <Button type="outline" onClick={executeCmd}>执行</Button>
                     </p>
                 </TabPane>
-                <TabPane key='2' title='上传文件'>
+                <TabPane key='2' title='执行脚本'>
+                    <Input.TextArea rows={8} />
+                    <p>
+                        <Button type="outline" onClick={executeCmd}>执行</Button>
+                    </p>
+                </TabPane>
+                <TabPane key='3' title='上传文件'>
                     <Button type="primary" onClick={selectFiles}>选择文件</Button>
                     <List
                         size='small'
@@ -349,7 +357,7 @@ export default function App() {
                         render={(item, index) => <List.Item key={index}>{item}</List.Item>}
                     />
                     <Row gutter={10} style={{ marginTop: '20px' }}>
-                        <Col span={3} style={{ textAlign: 'right', paddingTop: '3px' }}>
+                        <Col span={2} style={{ textAlign: 'right', paddingTop: '3px' }}>
                             <strong>远程位置：</strong>
                         </Col>
                         <Col span={12}>
@@ -361,7 +369,9 @@ export default function App() {
                             <Button type="outline" onClick={uploadFiles}>上传</Button>
                         </Col>
                     </Row>
-                    <Collapse key={1} style={{ marginTop: '15px' }}>
+                    <Collapse onChange={key => {
+                        setCurrentServerID(key)
+                    }} style={{ marginTop: '15px' }} activeKey={currentServerID}>
                      {
                         selectServer.map(item => {
                             if(uploadProgress[item.id] == undefined) {
@@ -382,7 +392,25 @@ export default function App() {
                       }
                     </Collapse>
                 </TabPane>
-                <TabPane key='3' title='下载文件'>
+                <TabPane key='4' title='下载文件'>
+                    <Row gutter={10} style={{ marginTop: '20px' }}>
+                        <Col span={2} style={{ textAlign: 'right', paddingTop: '3px' }}>
+                            <strong>远程文件位置：</strong>
+                        </Col>
+                        <Col span={12}>
+                            <Input placeholder="远程服务器文件夹" value={remoteFile} onChange={value => {
+                                setRemoteFile(value)
+                            }} />
+                        </Col>
+                        <Col span={4}>
+                            <Button type="outline" onClick={downloadRemoteFile}>下载</Button>
+                        </Col>
+                    </Row>
+                </TabPane>
+                 <TabPane key='5' title='加载k3s镜像'>
+                    <p>
+                        <Button type="outline" onClick={executeCmd}>加载</Button>
+                    </p>
                 </TabPane>
             </Tabs>
            
