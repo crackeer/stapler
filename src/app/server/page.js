@@ -8,6 +8,7 @@ import { basename, join } from "@tauri-apps/api/path"
 import invoke from "@/util/invoke";
 import { sleep } from "@/util/common";
 import ExecuteScript from './ExecuteScript'
+import ExecuteCmd from './ExecuteCmd'
 import LoadImage from './LoadImage'
 const FormItem = Form.Item;
 const TabPane = Tabs.TabPane;
@@ -174,45 +175,6 @@ export default function App() {
     const checkAll = (checked, selectedRows, changeRows) => {
         setSelectServer(selectedRows)
     };
-
-    const executeCmd = async () => {
-        if (cmdContent.length < 1) {
-            message('请输入命令')
-            return
-        }
-        if (selectServer.length == 0) {
-            message('请选择服务器')
-            return
-        }
-        let result = await connectServers()
-        if (result == false) {
-            return
-        }
-        let cmdResult = []
-        for (let i = 0; i < selectServer.length; i++) {
-            let session = sessionMap[selectServer[i].id]
-            try {
-                cmdResult.push({
-                    server: selectServer[i],
-                    status: 'executing',
-                    output: ''
-                })
-                setCmdResult([...cmdResult])
-                console.log(cmdContent)
-                let result = await invoke.sshExecuteCmd(session, cmdContent)
-                cmdResult[i].status = 'success'
-                cmdResult[i].output = result
-            } catch (e) {
-                console.log(e)
-                cmdResult[i].status = 'failed'
-                cmdResult[i].output = e.toString()
-            }
-            setCmdResult(prevState => {
-                prevState[i] = cmdResult[i]
-                return [...prevState]
-            })
-        }
-    }
 
     const uploadFiles = async () => {
         if (uploadFileList.length == 0) {
@@ -484,24 +446,7 @@ export default function App() {
         </Space>} style={{ marginTop: '20px' }}>
             <Tabs defaultActiveTab='1' type="line">
                 <TabPane key='1' title='执行命令'>
-                    <Input.TextArea rows={3} value={cmdContent} onChange={value => {
-                        setCmdContent(value)
-                    }} />
-                    <p>
-                        <Button type="outline" onClick={executeCmd}>执行</Button>
-                    </p>
-                    <List
-                        size='small'
-                        dataSource={cmdResult}
-                        rowKey={(record) => record.server.id}
-                        render={(item, index) => <List.Item key={index}>
-                            <p><Space>
-                                <strong>{item.server.title}#{item.server.server}</strong>
-                                <Tag>{item.status}</Tag>
-                            </Space></p>
-                            <Input.TextArea rows={3} value={item.output} />
-                        </List.Item>}
-                    />
+                    <ExecuteCmd servers={selectServer} />
                 </TabPane>
                 <TabPane key='2' title='执行脚本'>
                     <ExecuteScript servers={selectServer} />

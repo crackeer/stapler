@@ -6,7 +6,7 @@ import { message, open } from "@tauri-apps/plugin-dialog";
 import { basename } from '@tauri-apps/api/path'
 import { Button, Input, Space, Typography, List, Tag } from "@arco-design/web-react";
 
-export default function ExecuteScript({
+export default function LoadImage({
     servers
 }) {
 

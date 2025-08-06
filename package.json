@@ -35,7 +35,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-json-view": "^1.21.3",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.7"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",
