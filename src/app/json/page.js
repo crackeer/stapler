@@ -92,11 +92,7 @@ class App extends React.Component {
        
         try {
             let result = await invoke.readFile(file);
-            if (!result.success) {
-                message(result.message);
-                return;
-            }
-            let json = JSON.parse(result.data);
+            let json = JSON.parse(result);
             this.editor.set(json);
         } catch (e) { }
     };

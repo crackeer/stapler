@@ -77,20 +77,15 @@ const DownloadPage = () => {
         ]);
         try {
             let result = await invoke.readFile(file);
-            console.log(result);
-            if (!result.success) {
-                message(result.message);
-                return;
-            }
             if (file.endsWith(".txt")) {
-                let parts = result.data.split("\n").filter((item) => {
+                let parts = result.split("\n").filter((item) => {
                     return (
                         item.trim().length > 0 && common.startWithProtocol(item)
                     );
                 });
                 urls.push(...parts);
             } else if (file.endsWith(".json")  ) {
-                let data = JSON.parse(result.data);
+                let data = JSON.parse(result);
                 urls.push(...common.extractURLs(data));
             }
 

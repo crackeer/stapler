@@ -3,7 +3,7 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 extern crate rust_box;
 use rust_box::tauri::command::network::get_local_addr;
 use rust_box::tauri::command::ssh::{
-    connect_server, download_remote_file, remote_exec_command, remote_list_files, upload_remote_file, get_transfer_remote_progress,
+    ssh_connect_by_password, download_remote_file, remote_exec_command, remote_list_files, upload_remote_file, upload_remote_file_sync, get_transfer_remote_progress, exist_ssh_session
 };
 use rust_box::tauri::command::{
     ftp::{connect_ftp, disconnect_ftp, ftp_delete_file, ftp_delete_dir, ftp_download_file, ftp_list, ftp_upload_file},
@@ -54,6 +54,7 @@ pub fn run() {
             remote_list_files,
             download_remote_file,
             upload_remote_file,
+            upload_remote_file_sync,
             remote_exec_command,
             static_server_status,
             start_static_server,
@@ -75,8 +76,9 @@ pub fn run() {
             create_jsonp_file,
             write_rsvr_jsonp_asset,
             open_path,
-            connect_server,
+            ssh_connect_by_password,
             get_transfer_remote_progress,
+            exist_ssh_session,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -88,11 +88,7 @@ const VRPage = () => {
         let workJSONPath = await path.join(workDir, "work.json");
         try {
             let result = await invoke.readFile(workJSONPath);
-            if (!result.success) {
-                message(result.message);
-                return;
-            }
-            return JSON.parse(result.data);
+            return JSON.parse(result);
         } catch (e) {
             message(e);
             return {};

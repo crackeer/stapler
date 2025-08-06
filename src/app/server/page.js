@@ -7,6 +7,7 @@ import { confirm, message, open } from "@tauri-apps/plugin-dialog";
 import { basename, join } from "@tauri-apps/api/path"
 import invoke from "@/util/invoke";
 import { sleep } from "@/util/common";
+import ExecuteScript from './ExecuteScript'
 const FormItem = Form.Item;
 const TabPane = Tabs.TabPane;
 const Row = Grid.Row;
@@ -82,6 +83,8 @@ export default function App() {
     const [remoteFile, setRemoteFile] = useState('')
     const [localDir, setLocalDir] = useState('')
     const [downloadProgress, setDownloadProgress] = useState([])
+    const [cmdContent, setCmdContent] = useState('')
+    const [cmdResult, setCmdResult] = useState([])
     useEffect(() => {
         getServerList()
     }, [])
@@ -172,7 +175,42 @@ export default function App() {
     };
 
     const executeCmd = async () => {
-
+        if (cmdContent.length < 1) {
+            message('请输入命令')
+            return
+        }
+        if (selectServer.length == 0) {
+            message('请选择服务器')
+            return
+        }
+        let result = await connectServers()
+        if (result == false) {
+            return
+        }
+        let cmdResult = []
+        for (let i = 0; i < selectServer.length; i++) {
+            let session = sessionMap[selectServer[i].id]
+            try {
+                cmdResult.push({
+                    server: selectServer[i],
+                    status: 'executing',
+                    output: ''
+                })
+                setCmdResult([...cmdResult])
+                console.log(cmdContent)
+                let result = await invoke.sshExecuteCmd(session, cmdContent)
+                cmdResult[i].status = 'success'
+                cmdResult[i].output = result
+            } catch (e) {
+                console.log(e)
+                cmdResult[i].status = 'failed'
+                cmdResult[i].output = e.toString()
+            }
+            setCmdResult(prevState => {
+                prevState[i] = cmdResult[i]
+                return [...prevState]
+            })
+        }
     }
 
     const uploadFiles = async () => {
@@ -368,11 +406,12 @@ export default function App() {
                 continue
             }
             try {
-                let session = await invoke.sshConnectServer(
+                let session = await invoke.sshConnectByPassword(
                     item.server,
                     item.port,
                     item.user,
                     item.password,
+                    item.id + ''
                 )
                 sessions[item.id] = session
             } catch (e) {
@@ -417,6 +456,8 @@ export default function App() {
         setLocalDir(selected)
     };
 
+
+
     return <div style={{ padding: "5px 10px" }}>
         <Divider orientation="left">
             <Space>
@@ -432,27 +473,37 @@ export default function App() {
         } />
         <AddServerModal visible={visible} setVisible={setVisible} callback={getServerList} initValue={initValue} />
 
-        <Card title={'执行操作'} style={{ marginTop: '20px' }}>
-            <Space>
-                <strong>已选服务器:</strong>
-                {selectServer.map(item => {
-                    return <Tag>
-                        {item.title}（{item.server}）
-                    </Tag>
-                })}
-            </Space>
-            <Tabs defaultActiveTab='1' type="line" style={{ marginTop: '15px' }}>
+        <Card title={<Space>
+            <strong>已选服务器:</strong>
+            {selectServer.map(item => {
+                return <Tag>
+                    {item.title}（{item.server}）
+                </Tag>
+            })}
+        </Space>} style={{ marginTop: '20px' }}>
+            <Tabs defaultActiveTab='1' type="line">
                 <TabPane key='1' title='执行命令'>
-                    <Input.TextArea rows={8} />
+                    <Input.TextArea rows={3} value={cmdContent} onChange={value => {
+                        setCmdContent(value)
+                    }} />
                     <p>
                         <Button type="outline" onClick={executeCmd}>执行</Button>
                     </p>
+                    <List
+                        size='small'
+                        dataSource={cmdResult}
+                        rowKey={(record) => record.server.id}
+                        render={(item, index) => <List.Item key={index}>
+                            <p><Space>
+                                <strong>{item.server.title}#{item.server.server}</strong>
+                                <Tag>{item.status}</Tag>
+                            </Space></p>
+                            <Input.TextArea rows={3} value={item.output} />
+                        </List.Item>}
+                    />
                 </TabPane>
                 <TabPane key='2' title='执行脚本'>
-                    <Input.TextArea rows={8} />
-                    <p>
-                        <Button type="outline" onClick={executeCmd}>执行</Button>
-                    </p>
+                    <ExecuteScript servers={selectServer} />
                 </TabPane>
                 <TabPane key='3' title='上传文件'>
                     <Button type="primary" onClick={selectFiles}>选择文件</Button>
@@ -461,7 +512,7 @@ export default function App() {
                         header="待上传文件列表"
                         dataSource={uploadFileList}
                         style={{ marginTop: '15px' }}
-                        render={(item, index) => <List.Item key={index}>{item}</List.Item>}
+                        render={(item, index) => <List.Item key={index} extra={<Button type="outline" size="mini" onClick={() => { setUploadFileList(uploadFileList.filter((item1, index1) => index1 != index)) }}>删除</Button>}>{item}</List.Item>}
                     />
                     <Row gutter={10} style={{ marginTop: '20px' }}>
                         <Col span={2} style={{ textAlign: 'right', paddingTop: '3px' }}>
@@ -520,7 +571,7 @@ export default function App() {
                             }} />
                             <p>
                                 <Button type="outline" onClick={downloadFile}>开始下载</Button>
-                            </p> 
+                            </p>
                         </Col>
                         <Col span={4}>
                             <Button type="outline" onClick={selectDirectory}>选择文件夹</Button>

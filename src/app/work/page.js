@@ -75,11 +75,7 @@ const VRPage = () => {
         if (file == null) return;
         try {
             let result = await invoke.readFile(file);
-            if (!result.success) {
-                message(result.message);
-                return;
-            }
-            let json = JSON.parse(result.data);
+            let json = JSON.parse(result);
             editor.set(json);
             setCubeSize(json);
         } catch (e) {}

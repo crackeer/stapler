@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { result } from "lodash";
 
 var writeFile = async (file, content) => {
     let Result = await invoke("write_file", {
@@ -8,7 +9,7 @@ var writeFile = async (file, content) => {
     return Result;
 };
 
-var readFile = async (file, content) => {
+var readFile = async (file) => {
     let result = await invoke("get_file_content", {
         name: file,
     });
@@ -125,18 +126,39 @@ var downloadRemoteFile = async (sessionKey, localFile, remoteFile) => {
     return result;
 };
 
-var sshConnectServer = async (host, port, username, password) => {
-    return await invoke("connect_server", {
+var sshConnectByPassword = async (host, port, username, password, key) => {
+    if (key.length > 0)
+        try {
+            let result = await invoke("exist_ssh_session", {
+                sessionKey: key
+            })
+            if (result) {
+                return key
+            }
+        } catch (error) {
+
+        }
+
+    return await invoke("ssh_connect_by_password", {
         host,
         port,
         user: username,
-        authType: "password",
-        authConfig: password,
+        password,
+        key,
     });
 };
 
 var uploadRemoteFile = async (sessionKey, localFile, remoteFile) => {
     let result = await invoke("upload_remote_file", {
+        sessionKey,
+        localFile,
+        remoteFile
+    });
+    return result;
+};
+
+var uploadRemoteFileSync = async (sessionKey, localFile, remoteFile) => {
+    let result = await invoke("upload_remote_file_sync", {
         sessionKey,
         localFile,
         remoteFile
@@ -150,7 +172,16 @@ var getTransferProgress = async () => {
 };
 
 
-var deleteRemoteFile = async (host, privateKeyPath, path) => {
+var sshExecuteCmd = async (sessionKey, command) => {
+    let result = await invoke("remote_exec_command", {
+        sessionKey,
+        cmdString: command,
+    });
+    return result;
+};
+
+
+var deleteRemoteFile = async (sessionKey, command) => {
     let result = await invoke("remote_exec_cmd", {
         host,
         privateKeyPath,
@@ -314,8 +345,10 @@ export {
     createJSONPFile,
     writeRsvrJsonpAsset,
     openPath,
-    sshConnectServer,
+    sshConnectByPassword,
     getTransferProgress,
+    sshExecuteCmd,
+    uploadRemoteFileSync,
 };
 
 export default {
@@ -355,6 +388,8 @@ export default {
     createJSONPFile,
     writeRsvrJsonpAsset,
     openPath,
-    sshConnectServer,
+    sshConnectByPassword,
     getTransferProgress,
+    sshExecuteCmd,
+    uploadRemoteFileSync,
 };
