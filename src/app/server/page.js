@@ -8,6 +8,7 @@ import { basename, join } from "@tauri-apps/api/path"
 import invoke from "@/util/invoke";
 import { sleep } from "@/util/common";
 import ExecuteScript from './ExecuteScript'
+import LoadImage from './LoadImage'
 const FormItem = Form.Item;
 const TabPane = Tabs.TabPane;
 const Row = Grid.Row;
@@ -589,9 +590,7 @@ export default function App() {
                     />
                 </TabPane>
                 <TabPane key='5' title='加载k3s镜像'>
-                    <p>
-                        <Button type="outline" onClick={executeCmd}>加载</Button>
-                    </p>
+                    <LoadImage servers={selectServer} />
                 </TabPane>
             </Tabs>
 
