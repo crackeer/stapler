@@ -29,7 +29,7 @@ export default function ExecuteScript({
         setFiles([...files, file])
     }
 
-    const loadImages = async () => {
+    const loadImages = async (engine) => {
         if (files.length == 0) {
             message("请选择镜像文件")
             return
@@ -49,6 +49,7 @@ export default function ExecuteScript({
                         server: server,
                         status: "connecting",
                         remote_file: "",
+                        progress: 0,
                         message: ""
                     })
                     setProgress([...progress])
@@ -90,7 +91,13 @@ export default function ExecuteScript({
                     console.log("执行脚本", server)
                     progress[progress.length - 1].status = "executing"
                     setProgress([...progress])
-                    let result1 = await invoke.sshExecuteCmd(sessionKey, "k3s ctr image import " + progress[progress.length - 1].remote_file)
+                    let command = ""
+                    if (engine == "k3s") {
+                        command = "k3s ctr image import " + progress[progress.length - 1].remote_file
+                    } else if (engine == "docker") {
+                        command = "docker load -i " + progress[progress.length - 1].remote_file
+                    }
+                    let result1 = await invoke.sshExecuteCmd(sessionKey, command)
                     progress[progress.length - 1].status = "success"
                     progress[progress.length - 1].output = ""
                     setProgress([...progress])
@@ -136,7 +143,10 @@ export default function ExecuteScript({
             style={{ marginTop: '15px' }}
             render={(item, index) => <List.Item key={index} extra={<Button type="outline" size="mini" onClick={() => { setFiles(files.filter((item1, index1) => index1 != index)) }}>删除</Button>}>{item}</List.Item>}
         />
-        <Button type="primary" onClick={loadImages}>执行脚本</Button>
+        <Space>
+            <Button type="primary" onClick={() => loadImages("k3s")}>加载k3s镜像</Button>
+            <Button type="primary" onClick={() => loadImages("docker")}>加载docker镜像</Button>
+        </Space>
         <List
             size='small'
             header="执行结果"
