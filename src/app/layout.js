@@ -12,6 +12,7 @@ const MenuItem = Menu.Item;
 
 const pages = {
     "/json" : "JSON",
+    "/memo" : "备忘录",
     "/web/qrcode" : "二维码",
     "/web/tool" : "Web工具",
     "/request" : "HTTP请求",

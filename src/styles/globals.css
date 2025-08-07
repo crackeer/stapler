@@ -14,3 +14,7 @@ h3 {
 .bytemd-h600 .bytemd {
     height: 600px !important;
 }
+
+.bytemd-editor .CodeMirror .CodeMirror-lines {
+    max-width: -1!important;
+}

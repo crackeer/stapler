@@ -1,0 +1,7 @@
+.CodeMirror .CodeMirror-lines {
+    max-width: -1 !important;
+}
+
+.bytemd {
+   height: calc(100vh - 200px) !important;
+}

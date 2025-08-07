@@ -15,7 +15,7 @@ import { IconDelete, IconUpload, IconRefresh, IconObliqueLine, IconFolderAdd, Ic
 import { deleteFile, getFileList, createDir } from './action'
 import { partial } from "filesize";
 import { message, confirm } from "@tauri-apps/plugin-dialog";
-import lodash, { set } from 'lodash'
+import lodash from 'lodash'
 const getFileSize = partial({ base: 2, standard: "jedec" });
 
 const { Row, Col } = Grid;
