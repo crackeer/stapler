@@ -8,15 +8,17 @@ import {
     Popover,
     Divider,
     Link,
+    Grid,
     Select,
 } from "@arco-design/web-react";
 import { IconDelete, IconUpload, IconRefresh, IconObliqueLine, IconFolderAdd, IconHome, IconLoading } from '@arco-design/web-react/icon';
 import { deleteFile, getFileList, createDir } from './action'
 import { partial } from "filesize";
 import { message, confirm } from "@tauri-apps/plugin-dialog";
-import lodash from 'lodash'
+import lodash, { set } from 'lodash'
 const getFileSize = partial({ base: 2, standard: "jedec" });
 
+const { Row, Col } = Grid;
 
 async function generateQuickDirs(directory) {
     let sep = '/';
@@ -43,6 +45,7 @@ export default function FileManage({
             'title': '名字',
             'dataIndex': 'name',
             'key': 'name',
+            'width': '30%',
             'render': (col, record, index) => (
                 record.is_dir ? <a href="javascript:;" onClick={changeDir.bind(this, record.name)} style={{ textDecoration: 'none' }}>{record.name}</a> : <span>{record.name}</span>
             )
@@ -94,36 +97,30 @@ export default function FileManage({
     const [newDirName, setNewDirName] = useState('')
 
     useEffect(() => {
-        setDirectory(initialDir)
-
+        let dir = directory
+        if (directory == '' && initialDir != '') {
+            setDirectory(initialDir)
+            dir = initialDir
+        }
         if (servers.length == 0) {
             return
         }
         if (currentServer == null) {
             setCurrentServer(servers[0])
-            console.log(servers[0])
+            listFiles(servers[0], dir)
         } else {
             let index = lodash.findIndex(servers, { id: currentServer.id })
             if (index == -1) {
                 setCurrentServer(servers[0])
-            }
-        }
-        for (var i in servers) {
-            if (servers[i].id == currentServer) {
-                setCurrentServer(servers[i])
-                break
+                listFiles(servers[0], dir)
             }
         }
 
-        setTimeout(() => {
-            console.log(currentServer)
-            listFiles(initialDir)
-        }, 1000)
     }, [initialDir, servers])
 
     const changeServer = (server) => {
         setCurrentServer(server)
-        listFiles(directory)
+        listFiles(server, directory)
     }
 
     const getHome = () => {
@@ -136,23 +133,19 @@ export default function FileManage({
         return '/home/' + currentServer.user
     }
     const goHome = async () => {
-        await this.setState({
-            directory: this.getHome(this.state.user)
-        })
-        setTimeout(this.listFiles, 200)
+        setDirectory(getHome())
+        listFiles(currentServer, getHome())
     }
 
-    const listFiles = async (dir) => {
-        if (currentServer == null) {
-            console.log('no server')
+    const listFiles = async (server, dir) => {
+        if (server == null) {
             return
         }
         let quickDirs = await generateQuickDirs(dir)
         setQuickDirs(quickDirs)
         setLoading(true)
-        setFiles([])
-        let result = await getFileList(currentServer, dir)
-        console.log(result, currentServer)
+        let result = await getFileList(server, dir)
+        console.log(result, server)
         if (result.status == 'failed') {
             return
         }
@@ -172,23 +165,27 @@ export default function FileManage({
     }
     const gotoDir = async (item) => {
         setDirectory(item.path)
-        listFiles(item.path)
-    }
-    const changeDir = async (name) => {
-        setDirectory(directory + '/' + name)
-        listFiles(directory + '/' + name)
+        listFiles(currentServer, item.path)
     }
 
+    const changeDir = async (name) => {
+        setDirectory(directory + '/' + name)
+        listFiles(currentServer, directory + '/' + name)
+    }
 
     const toDeleteFile = async (item) => {
         const yes = await confirm('确认删除该文件（夹）', '删除提示');
         if (!yes) {
             return
         }
-        let result = await deleteFile(currentServer, directory + '/' + item.name)
+        let remoteFile = directory + '/' + item.name
+        if (item.name.indexOf(' ') >= 0) {
+            remoteFile = directory + "/'" + item.name + "'"
+        }
+        let result = await deleteFile(currentServer, remoteFile)
         if (result.status == 'success') {
             message('删除成功')
-            listFiles(directory)
+            listFiles(currentServer, directory)
         } else {
             message(result.message)
         }
@@ -204,7 +201,7 @@ export default function FileManage({
             message('创建成功')
             setVisible(false)
             setNewDirName('')
-            listFiles(directory)
+            listFiles(directory, directory)
         } else {
             message(result.message)
         }
@@ -216,7 +213,7 @@ export default function FileManage({
     }
 
     const refresh = async () => {
-        listFiles(directory)
+        listFiles(currentServer, directory)
     }
 
     const toUploadFile = async () => {
@@ -225,17 +222,19 @@ export default function FileManage({
 
     return (
         <>
-            <div>
-                <Select value={currentServer} onChange={changeServer}>
-                    {
-                        servers.map(item => {
-                            return <Select.Option key={item.id} value={item}>{item.title} - {item.server}</Select.Option>
-                        })
-                    }
-                </Select>
-            </div>
+            <Row style={{ marginBottom: '20px' }}>
+                <Col span={8}>
+                    <Select value={currentServer} onChange={changeServer} addBefore='服务器'>
+                        {
+                            servers.map(item => {
+                                return <Select.Option key={item.id} value={item}>{item.title} - {item.server}</Select.Option>
+                            })
+                        }
+                    </Select>
+                </Col>
+            </Row>
 
-            <Divider>
+            <Divider orientation="left">
                 <Space>
                     <Button onClick={goHome} type='primary' size='small' icon={<IconHome />}>家目录</Button>
                     <Popover
@@ -258,7 +257,7 @@ export default function FileManage({
                     <Button onClick={refresh} type='primary' icon={<IconRefresh />} >更新</Button>
                 </Space>
             </Divider>
-            <Space split={<IconObliqueLine />} align={'center'} style={{ marginRight: '0' }}>
+            <Space split={<IconObliqueLine />} align={'center'} style={{ marginRight: '0', marginBottom: '10px' }}>
                 <Link onClick={gotoDir.bind(this, { path: '/' })} key={'/'}>根目录</Link>
                 {
                     quickDirs.map(item => {

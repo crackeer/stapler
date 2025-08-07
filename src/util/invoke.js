@@ -181,6 +181,7 @@ var sshExecuteCmd = async (sessionKey, command) => {
 
 
 var deleteRemoteFile = async (sessionKey, file) => {
+    console.log('deleteRemoteFile', sessionKey, file)
     let result = await invoke("remote_exec_command", {
         sessionKey,
         cmdString: "rm -rf " + file,
