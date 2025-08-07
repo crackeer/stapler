@@ -1,6 +1,6 @@
 'use client'
 
-import { List, Tag, Input } from "@arco-design/web-react";
+import { List, Tag, Input, Progress } from "@arco-design/web-react";
 
 export default function Output({
     dataSource, additionRender, 
@@ -15,9 +15,9 @@ export default function Output({
         render={(item, index) => <List.Item key={index}>
             <p>主机：{item.server.title} # {item.server.server}</p>
             {
-                item.target ? <p>目标：{item.target}</p> : null
+                item.status ? <div>状态：<Tag>{item.status}</Tag></div> : null
             }
-            <div>状态：<Tag>{item.status}</Tag></div>
+            <div>{item.content}</div>
             {
                 item.percent ? <>
                     <p>进度：</p>

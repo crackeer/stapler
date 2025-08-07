@@ -1,92 +1,22 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { IconPlus, IconDelete } from "@arco-design/web-react/icon"
-import { Modal, Card, Button, Form, Input, Table, Space, Grid, Tabs, Collapse, Divider, List, Tag, Progress } from "@arco-design/web-react"
+import {  Card, Button, Table, Space, Tabs, Divider, Tag } from "@arco-design/web-react"
 import database from "@/util/database";
-import { confirm, message, open } from "@tauri-apps/plugin-dialog";
-import { basename, join } from "@tauri-apps/api/path"
-import invoke from "@/util/invoke";
-import { sleep } from "@/util/common";
+import { confirm } from "@tauri-apps/plugin-dialog";
 import ExecuteScript from './ExecuteScript'
 import ExecuteCmd from './ExecuteCmd'
 import LoadImage from './LoadImage'
-const FormItem = Form.Item;
+import UploadFile from './UploadFile'
+import DownloadFile from './DownloadFile'
+import AddServer from "./AddServer";
+import FileManage from "./FileManage";
 const TabPane = Tabs.TabPane;
-const Row = Grid.Row;
-const Col = Grid.Col;
-function AddServerModal({ visible, setVisible, initValue, callback }) {
-    const [selfVisible, setSelfVisible] = useState(visible)
-    const [form] = Form.useForm();
-    useEffect(() => {
-        setSelfVisible(visible)
-        if (initValue != null) {
-            form.setFieldsValue({
-                server: initValue.server,
-                user: initValue.user,
-                password: initValue.password,
-                port: initValue.port,
-                name: initValue.title,
-            })
-        } else {
-            form.setFieldsValue({
-                server: "",
-                user: "root",
-                password: "",
-                port: "22",
-            })
-        }
-    }, [visible, initValue])
-    var doAddServer = async () => {
-        let valid = await form.validate()
-        if (!valid) {
-            return
-        }
-        let data = form.getFieldsValue()
-        let content = {
-            server: data.server,
-            user: data.user,
-            password: data.password,
-            port: data.port,
-        }
-        try {
-            let result = await database.createServer(data.name, JSON.stringify(content))
-            callback()
-            setSelfVisible(false)
-            setVisible(false)
-        } catch (error) {
-            message('添加失败')
-            return
-        }
-    }
-    return <Modal visible={selfVisible} title="新增Server配置" onCancel={() => {
-        setSelfVisible(false)
-        setVisible(false)
-    }} style={{ width: '60%' }} onConfirm={doAddServer}>
-        <Form autoComplete="off" form={form}>
-            <FormItem label="服务器名称" field="name"><Input placeholder="服务器名称" rules={[{ required: true, message: '请输入服务器名称' }]} /></FormItem>
-            <FormItem label="服务器IP" field="server"><Input placeholder="服务器IP" rules={[{ required: true, message: '请输入服务器IP' }]} /></FormItem>
-            <FormItem label="用户" field="user"><Input placeholder="用户" rules={[{ required: true, message: '请输入用户' }]} /></FormItem>
-            <FormItem label="密码" field="password"><Input placeholder="密码" type="password" rules={[{ required: true, message: '请输入密码' }]} /></FormItem>
-            <FormItem label="端口" field="port"><Input placeholder="端口" rules={[{ required: true, message: '请输入端口' }]} /></FormItem>
-        </Form>
-    </Modal>
-}
 
 export default function App() {
     const [visible, setVisible] = useState(false)
     const [serverList, setServerList] = useState([])
     const [initValue, setInitValue] = useState(null)
-    const [uploadFileList, setUploadFileList] = useState([])
-    const [remoteDir, setRemoteDir] = useState('/tmp')
     const [selectServer, setSelectServer] = useState([])
-    const [sessionMap, setSessionMap] = useState({})
-    const [currentServerID, setCurrentServerID] = useState(0)
-    const [uploadProgress, setUploadProgress] = useState({})
-    const [remoteFile, setRemoteFile] = useState('')
-    const [localDir, setLocalDir] = useState('')
-    const [downloadProgress, setDownloadProgress] = useState([])
-    const [cmdContent, setCmdContent] = useState('')
-    const [cmdResult, setCmdResult] = useState([])
     useEffect(() => {
         getServerList()
     }, [])
@@ -176,251 +106,6 @@ export default function App() {
         setSelectServer(selectedRows)
     };
 
-    const uploadFiles = async () => {
-        if (uploadFileList.length == 0) {
-            message('请选择文件')
-            return
-        }
-        if (selectServer.length == 0) {
-            message('请选择服务器')
-            return
-        }
-
-        if (remoteDir.length < 1) {
-            message('请输入远程目录')
-            return
-        }
-        let result = await connectServers()
-        if (result == false) {
-            return
-        }
-        let uploadProgress = {}
-        for (let i = 0; i < selectServer.length; i++) {
-            uploadProgress[selectServer[i].id] = []
-            setUploadProgress(uploadProgress)
-            setCurrentServerID(selectServer[i].id)
-            let serverInfo = selectServer[i]
-            for (let j = 0; j < uploadFileList.length; j++) {
-                let result = await singleUploadFiles(selectServer[i], uploadFileList[j], remoteDir)
-                if (result.success == false) {
-                    uploadProgress[selectServer[i].id].push({
-                        file: uploadFileList[j],
-                        status: 'failure',
-                        message: result.message,
-                        progress: 0,
-                    })
-                } else {
-                    uploadProgress[selectServer[i].id].push({
-                        file: uploadFileList[j],
-                        status: 'transferring',
-                        message: result.message,
-                        progress: 0,
-                    })
-                }
-                console.log(uploadProgress)
-                setUploadProgress(uploadProgress)
-                let finished = false
-
-                do {
-                    try {
-                        console.log("query upload progress")
-                        let query = await invoke.getTransferProgress()
-                        console.log("result", query)
-                        uploadProgress[serverInfo.id][j].progress = (parseInt(query.current) / parseInt(query.total) * 100).toFixed(2)
-                        uploadProgress[serverInfo.id][j].status = query.status
-                        if (query.status != 'transferring') {
-                            finished = true
-                        }
-                    } catch (e) {
-                        console.log("exception", e)
-                        finished = true
-                        uploadProgress[serverInfo.id][j].status = 'failure'
-                        uploadProgress[serverInfo.id][j].message = '上传失败' + e.message
-                    }
-                    setUploadProgress(prev => ({
-                        ...prev,
-                        [serverInfo.id]: uploadProgress[serverInfo.id],
-                    }))
-                    await sleep(300)
-                } while (!finished)
-            }
-        }
-        message('全部上传完成')
-    }
-
-    const downloadFile = async () => {
-        if (remoteFile.length == 0) {
-            message('请填写远程文件')
-            return
-        }
-        if (selectServer.length == 0) {
-            message('请选择服务器')
-            return
-        }
-
-        let result = await connectServers()
-        if (result == false) {
-            return
-        }
-        let downloadProgress = []
-        for (let i = 0; i < selectServer.length; i++) {
-            let result = await singleDownloadFile(selectServer[i], remoteFile, localDir)
-            if (result.success == false) {
-                downloadProgress.push({
-                    server: selectServer[i],
-                    local_file: result.local_file,
-                    status: 'failure',
-                    message: result.message,
-                    progress: 0,
-                })
-            } else {
-                downloadProgress.push({
-                    server: selectServer[i],
-                    local_file: result.local_file,
-                    status: 'transferring',
-                    message: result.message,
-                    progress: 0,
-                })
-            }
-            console.log(downloadProgress)
-            setDownloadProgress(downloadProgress)
-            let finished = false
-
-            do {
-                try {
-                    console.log("query upload progress")
-                    let query = await invoke.getTransferProgress()
-                    console.log("result", query)
-                    downloadProgress[i].progress = (parseInt(query.current) / parseInt(query.total) * 100).toFixed(2)
-                    downloadProgress[i].status = query.status
-                    if (query.status != 'transferring') {
-                        finished = true
-                    }
-                } catch (e) {
-                    console.log("exception", e)
-                    finished = true
-                    downloadProgress[i].status = 'failure'
-                    downloadProgress[i].message = '下载失败' + e.message
-                }
-                setDownloadProgress([...downloadProgress])
-                await sleep(300)
-            } while (!finished)
-        }
-        message('全部下载完成')
-    }
-
-    const singleUploadFiles = async (serverInfo, file, remoteDir) => {
-        if (sessionMap[serverInfo.id] == null) {
-            message('服务器连接失败：' + serverInfo.title)
-            return {
-                success: false,
-                message: '服务器连接失败：' + serverInfo.title
-            }
-        }
-        let name = await basename(file)
-        let remoteFile = remoteDir + '/' + name
-        try {
-            let result = await invoke.uploadRemoteFile(sessionMap[serverInfo.id], file, remoteFile)
-            return {
-                success: true,
-                message: '正在上传中'
-            }
-        } catch (e) {
-            return {
-                success: false,
-                message: '上传失败'
-            }
-        }
-    }
-
-    const singleDownloadFile = async (serverInfo, remoteFile, localDir) => {
-        if (sessionMap[serverInfo.id] == null) {
-            message('服务器连接失败：' + serverInfo.title)
-            return {
-                success: false,
-                message: '服务器连接失败：' + serverInfo.title,
-                local_file: '',
-            }
-        }
-        let parts = remoteFile.split('/')
-        let name = parts[parts.length - 1]
-        let localFile = await join(localDir, serverInfo.title + '-' + name)
-        try {
-            let result = await invoke.downloadRemoteFile(sessionMap[serverInfo.id], localFile, remoteFile)
-            return {
-                success: true,
-                message: '正在下载中',
-                local_file: localFile,
-            }
-        } catch (e) {
-            return {
-                success: false,
-                message: '下载失败' + e.message,
-                local_file: localFile,
-            }
-        }
-    }
-
-    const connectServers = async () => {
-        let sessions = sessionMap
-        for (let i = 0; i < selectServer.length; i++) {
-            let item = selectServer[i]
-            if (item.id in sessionMap) {
-                continue
-            }
-            try {
-                let session = await invoke.sshConnectByPassword(
-                    item.server,
-                    item.port,
-                    item.user,
-                    item.password,
-                    item.id + ''
-                )
-                sessions[item.id] = session
-            } catch (e) {
-                console.log(e)
-                message('连接服务器失败：' + item.title)
-                return false
-            }
-        }
-        setSessionMap(sessions)
-        return true
-    }
-
-    const selectFiles = async () => {
-        let files = await open({
-            multipart: true,
-            filters: [
-                {
-                    name: "",
-                    extensions: [],
-                },
-            ],
-        });
-        if (files == null) {
-            return
-        }
-        setUploadFileList([files, ...uploadFileList])
-    }
-
-    const selectDirectory = async () => {
-        let selected = await open({
-            directory: true,
-            filters: [
-                {
-                    name: "File",
-                    extensions: [],
-                },
-            ],
-        });
-        if (selected == null) {
-            return;
-        }
-        setLocalDir(selected)
-    };
-
-
-
     return <div style={{ padding: "5px 10px" }}>
         <Divider orientation="left">
             <Space>
@@ -434,7 +119,7 @@ export default function App() {
                 onChange: checkAll,
             }
         } />
-        <AddServerModal visible={visible} setVisible={setVisible} callback={getServerList} initValue={initValue} />
+        <AddServer visible={visible} setVisible={setVisible} callback={getServerList} initValue={initValue} />
 
         <Card title={<Space>
             <strong>已选服务器:</strong>
@@ -451,94 +136,22 @@ export default function App() {
                 <TabPane key='2' title='执行脚本'>
                     <ExecuteScript servers={selectServer} />
                 </TabPane>
-                <TabPane key='3' title='上传文件'>
-                    <Button type="primary" onClick={selectFiles}>选择文件</Button>
-                    <List
-                        size='small'
-                        header="待上传文件列表"
-                        dataSource={uploadFileList}
-                        style={{ marginTop: '15px' }}
-                        render={(item, index) => <List.Item key={index} extra={<Button type="outline" size="mini" onClick={() => { setUploadFileList(uploadFileList.filter((item1, index1) => index1 != index)) }}>删除</Button>}>{item}</List.Item>}
-                    />
-                    <Row gutter={10} style={{ marginTop: '20px' }}>
-                        <Col span={2} style={{ textAlign: 'right', paddingTop: '3px' }}>
-                            <strong>远程位置：</strong>
-                        </Col>
-                        <Col span={12}>
-                            <Input placeholder="远程服务器文件夹" value={remoteDir} onChange={value => {
-                                setRemoteDir(value)
-                            }} />
-                        </Col>
-                        <Col span={4}>
-                            <Button type="outline" onClick={uploadFiles}>上传</Button>
-                        </Col>
-                    </Row>
-                    <Collapse onChange={key => {
-                        setCurrentServerID(key)
-                    }} style={{ marginTop: '15px' }} activeKey={currentServerID}>
-                        {
-                            selectServer.map(item => {
-                                if (uploadProgress[item.id] == undefined) {
-                                    return null
-                                }
-                                return <Collapse.Item header={item.title} name={item.id} key={item.id}>
-                                    <List
-                                        size='small'
-                                        dataSource={uploadProgress[item.id]}
-                                        rowKey={(record) => record.file}
-                                        render={(item1, index) => <List.Item key={index}>
-                                            <span>{item1.file}</span>
-                                            <Progress percent={item1.progress} status={item1.status == 'success' ? 'success' : 'warning'} />
-                                        </List.Item>}
-                                    />
-                                </Collapse.Item>
-                            })
-                        }
-                    </Collapse>
+                <TabPane key='6' title='上传文件'>
+                    <UploadFile servers={selectServer} />
+                </TabPane>
+                <TabPane key='7' title='下载文件'>
+                    <LoadImage servers={selectServer} />
                 </TabPane>
                 <TabPane key='4' title='下载文件'>
-                    <Row gutter={10} style={{ marginTop: '10px' }}>
-                        <Col span={2} style={{ textAlign: 'right', paddingTop: '4px' }}>
-                            <strong>远程文件：</strong>
-                        </Col>
-                        <Col span={12}>
-                            <Input placeholder="文件路径" value={remoteFile} onChange={value => {
-                                setRemoteFile(value)
-                            }} />
-                        </Col>
-                    </Row>
-                    <Row gutter={10} style={{ marginTop: '10px' }}>
-                        <Col span={2} style={{ textAlign: 'right', paddingTop: '4px' }}>
-                            <strong>本地存放：</strong>
-                        </Col>
-                        <Col span={12}>
-                            <Input placeholder="本地文件夹" value={localDir} onChange={value => {
-                                setLocalDir(value)
-                            }} />
-                            <p>
-                                <Button type="outline" onClick={downloadFile}>开始下载</Button>
-                            </p>
-                        </Col>
-                        <Col span={4}>
-                            <Button type="outline" onClick={selectDirectory}>选择文件夹</Button>
-                        </Col>
-                    </Row>
-
-                    <List
-                        size='small'
-                        dataSource={downloadProgress}
-                        rowKey={(record) => record.local_file}
-                        render={(item1, index) => <List.Item key={index}>
-                            <span>下载到：{item1.local_file}</span>
-                            <Progress percent={item1.progress} status={item1.status == 'success' ? 'success' : 'warning'} />
-                        </List.Item>}
-                    />
+                    <DownloadFile servers={selectServer} />
                 </TabPane>
                 <TabPane key='5' title='加载k3s镜像'>
                     <LoadImage servers={selectServer} />
                 </TabPane>
+                <TabPane key='8' title='文件管理'>
+                    <FileManage servers={selectServer} initialDir={'/tmp'}/>
+                </TabPane>
             </Tabs>
-
         </Card>
     </div>
 }

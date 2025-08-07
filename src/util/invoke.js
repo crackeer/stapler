@@ -108,10 +108,9 @@ var parseHTMLTitle = async (url) => {
 
 
 
-var listFiles = async (host, privateKeyPath, path) => {
-    let result = await invoke("list_files", {
-        host,
-        privateKeyPath,
+var sshListFiles = async (sessionKey, path) => {
+    let result = await invoke("remote_list_files", {
+        sessionKey,
         path,
     });
     return result;
@@ -181,19 +180,17 @@ var sshExecuteCmd = async (sessionKey, command) => {
 };
 
 
-var deleteRemoteFile = async (sessionKey, command) => {
-    let result = await invoke("remote_exec_cmd", {
-        host,
-        privateKeyPath,
-        cmdString: "rm -rf " + path,
+var deleteRemoteFile = async (sessionKey, file) => {
+    let result = await invoke("remote_exec_command", {
+        sessionKey,
+        cmdString: "rm -rf " + file,
     });
     return result;
 };
 
-var newRemoteDirectory = async (host, privateKeyPath, path) => {
-    let result = await invoke("remote_exec_cmd", {
-        host,
-        privateKeyPath,
+var createRemoteDir = async (sessionKey, path) => {
+    let result = await invoke("remote_exec_command", {
+        sessionKey,
         cmdString: "mkdir -p " + path,
     });
     return result;
@@ -323,11 +320,11 @@ export {
     fileExists,
     parseJSCode,
     parseHTMLTitle,
-    listFiles,
+    sshListFiles,
     downloadRemoteFile,
     uploadRemoteFile,
     deleteRemoteFile,
-    newRemoteDirectory,
+    createRemoteDir,
     startHTTPServer,
     stopHTTPServer,
     httpServerStatus,
@@ -366,11 +363,11 @@ export default {
     fileExists,
     parseJSCode,
     parseHTMLTitle,
-    listFiles,
+    sshListFiles,
     downloadRemoteFile,
     uploadRemoteFile,
     deleteRemoteFile,
-    newRemoteDirectory,
+    createRemoteDir,
     startHTTPServer,
     stopHTTPServer,
     httpServerStatus,

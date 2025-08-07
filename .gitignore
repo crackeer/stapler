@@ -24,3 +24,5 @@ dist-ssr
 *.sln
 *.sw?
 .next
+.DS_Store
+*/.DS_Store
