@@ -5,7 +5,7 @@ import {
     Space,
     Table,
 } from "@arco-design/web-react";
-import { getK3sPods } from './action'
+import { getK3sAPIResource } from './action'
 
 export default function K3sPod({
     server,
@@ -17,11 +17,6 @@ export default function K3sPod({
             'title': '名字',
             'dataIndex': 'name',
             'key': 'name',
-        },
-        {
-            'title': 'READY',
-            'dataIndex': 'ready',
-            'key': 'ready',
         },
         {
             'title': 'STATUS',

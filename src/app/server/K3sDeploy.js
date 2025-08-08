@@ -5,57 +5,65 @@ import {
     Space,
     Table,
 } from "@arco-design/web-react";
-import { getK3sDeploy } from './action'
-import { snapdom } from '@zumer/snapdom';
-import invoke from "@/util/invoke";
-import dayjs from "dayjs";
-
-import {Buffer} from 'buffer'
+import { getK3sAPIResource } from './action'
+import lodash from 'lodash'
+import dayjs from 'dayjs'
 export default function K3sDeploy({
     server,
     namespace,
+    reload
 }) {
     // 'name', 'ready', 'up-to-date', 'available', 'age', 'containers', 'images', 'selector'
-    const deployColumns = [
+    const columns = [
         {
             'title': '名字',
-            'dataIndex': 'name',
-            'key': 'name',
+            'dataIndex': 'metadata.name',
+            'key': 'name'
         },
         {
-            'title': 'READY',
-            'dataIndex': 'ready',
-            'key': 'ready',
+            'title': 'Image',
+            'dataIndex': 'spec.template.spec.containers[0].image',
+            'key': 'image',
         },
         {
-            'title': '更新',
-            'dataIndex': 'up-to-date',
-            'key': 'up-to-date',
+            'title': '端口',
+            'key': 'port',
+            'render': (col, record, index) => {
+                let portList = lodash.get(record, 'spec.template.spec.containers[0].ports', [])
+                if (portList.length == 0) {
+                    return '-'
+                }
+                let ports = []
+                let tmp = []
+                portList.forEach(element => {
+                    tmp.push(element.containerPort)
+                    if (tmp.length >= 4) {
+                        ports.push(tmp.join(','))
+                        tmp = []
+                    }
+                });
+                if (tmp.length > 0) {
+                    ports.push(tmp.join(','))
+                }
+                return ports.map((element, index) => {
+                    return <div key={index}>{element}</div>
+                })
+            }
         },
         {
-            'title': 'available',
-            'dataIndex': 'available',
-            'key': 'available',
+            'title': '创建时间',
+            'key': 'create_time',
+            'render': (col, record, index) => {
+                return dayjs(record.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm:ss')
+            }
         },
         {
-            'title': 'AGE',
-            'dataIndex': 'age',
-            'key': 'age',
-        },
-        {
-            'title': '容器',
-            'dataIndex': 'containers',
-            'key': 'containers',
-        },
-        {
-            'title': '镜像',
-            'dataIndex': 'images',
-            'key': 'images',
-        },
-        {
-            'title': '选择器',
-            'dataIndex': 'selector',
-            'key': 'selector',
+            'title': '副本数',
+            'dataIndex': 'status.replicas',
+            'key': 'replicas',
+            'render': (col, record, index) => {
+                return record.status.availableReplicas + '/' + record.status.replicas
+            }
         },
         {
             'title': '操作',
@@ -63,26 +71,26 @@ export default function K3sDeploy({
             'align': 'center',
             'render': (col, record, index) => {
                 return <Space>
-                    <Button size="mini" type='text' status="danger">删除</Button>
+                    <Button size="mini" type='text' status="danger">Rollout</Button>
                 </Space>
             }
         }
     ]
     const [loading, setLoading] = useState(false)
-    const [deployList, setDeployList] = useState([])
+    const [list, setList] = useState([])
     useEffect(() => {
-        getDeployList()
-    }, [namespace, server])
+        getList()
+    }, [namespace, server, reload])
 
-    const getDeployList = async () => {
+    const getList = async () => {
         setLoading(true)
-        let result = await getK3sDeploy(server, namespace)
+        let result = await getK3sAPIResource(server, namespace, 'deployments')
         console.log(result)
         setLoading(false)
-        setDeployList(result)
+        setList(result)
     }
 
     return <>
-        <Table columns={deployColumns} data={deployList} loading={loading} pagination={false}/>
+        <Table columns={columns} data={list} loading={loading} pagination={false} />
     </>
 }

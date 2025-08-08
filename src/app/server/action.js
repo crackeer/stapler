@@ -200,33 +200,27 @@ export const getK3sNamespaces = async (server) => {
     }
 }
 
-
-export const getK3sDeploy = async (server, ns) => {
+export const getK3sNode = async (server) => {
     try {
         let sessionKey = await connectServer(server)
-        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get deploy -owide -n " + ns)
-        let lines = common.splitIntoArray(result, ['\n'])
-        let list = common.formatCommandOutput(lines, 1, [
-            'name', 'ready', 'up-to-date', 'available', 'age', 'containers', 'images', 'selector'
-        ])
-        return list
+        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get node -ojson")
+        let data = JSON.parse(result)
+        return data.items
     } catch (e) {
-        console.log('getK3sDeploy', e)
+        console.log('getK3sAPIResource', e, server, ns, resource)
         return []
     }
 }
 
-export const getK3sPods = async (server, ns) => {
+
+export const getK3sAPIResource = async (server, ns, resource) => {
     try {
         let sessionKey = await connectServer(server)
-        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get pods -owide -n " + ns)
-        let lines = common.splitIntoArray(result, ['\n'])
-        let list = common.formatCommandOutput(lines, 1, [
-            'name', 'ready', 'status', 'restarts', 'age', 'ip', 'node', 'NOMINATED_NOD', "READINESS_GATES"
-        ])
-        return list
+        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get " + resource + " -ojson -n " + ns)
+        let data = JSON.parse(result)
+        return data.items
     } catch (e) {
-        console.log('getK3sPods', e)
+        console.log('getK3sAPIResource', e, server, ns, resource)
         return []
     }
 }

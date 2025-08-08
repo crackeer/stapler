@@ -14,6 +14,7 @@ import {
 } from "@arco-design/web-react";
 import { getK3sNamespaces, getK3sPods } from './action'
 import lodash, { set } from 'lodash'
+import K3sNode from "./K3sNode";
 import K3sDeploy from "./K3sDeploy";
 import K3sPod from "./K3sPod";
 const TabPane = Tabs.TabPane;
@@ -80,11 +81,14 @@ export default function K3s({
                 </Col>
             </Row>
             <Tabs tabPosition='left' style={{ marginTop: 20 }}>
+                <TabPane key='tab0' title='Node'>
+                    <K3sNode server={currentServer} />
+                </TabPane>
                 <TabPane key='tab1' title='Deployment'>
                     <K3sDeploy server={currentServer} namespace={namespace} />
                 </TabPane>
                 <TabPane key='tab2' title='Pod'>
-                    <K3sPod server={currentServer} namespace={namespace} />
+                    
                 </TabPane>
             </Tabs>
 
