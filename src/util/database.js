@@ -43,6 +43,14 @@ var getContentListV1 = async (contentType) => {
     );
 };
 
+var getContentListV2 = async (contentType, tag) => {
+    let db = await getSQLiteDB();
+    return await db.select(
+        "SELECT id, title, content_type, content, tag, create_at, modify_at from content WHERE content_type = $1 and tag = $2 order by id desc",
+        [contentType, tag]
+    );
+};
+
 var getContent = async (id) => {
     let db = await getSQLiteDB();
     return await db.select("SELECT * from content WHERE id = $1", [id]);
@@ -95,6 +103,15 @@ var updatePageInitData = async (page, tag, content) => {
     return await createContent(page, content, "page", tag);
 };
 
+var updateContent = async (id, content) => {
+    let db = await getSQLiteDB();
+    let nowTime = dayjs().unix();
+    return await db.execute(
+        "update content set content = $1, modify_at = $2 where id = $3",
+        [content, nowTime, id]
+    );
+}
+
 const formatList = (list) => {
     for (var i in list) {
         let object = JSON.parse(list[i].content);
@@ -102,6 +119,13 @@ const formatList = (list) => {
     }
     return list;
 };
+
+const formatCreateTime = (list) => {
+    for (var i in list) {
+        list[i].create_time = dayjs.unix(list[i].create_at).format('YYYY-MM-DD HH:mm')
+    }
+    return list;
+}
 
 var getServerList = async () => {
     let data = await getContentListV1("server");
@@ -112,9 +136,20 @@ var createServer = async (title, content) => {
     return await createContent(title, content, "server", "tag");
 };
 
+var createMemo = async (title, content) => {
+    return await createContent(title, content, "memo", dayjs().format('YYYY-MM'));
+};
+
+
+var getMemoList = async (month) => {
+    let data = await getContentListV2("memo", month);
+    return formatCreateTime(data)
+}
+
 export default {
     deleteContent,
     getContent,
+    updateContent,
     getMySQLConfigList,
     createMySQLConfig,
     getPageInitData,
@@ -122,4 +157,6 @@ export default {
     getMySQL,
     getServerList,
     createServer,
+    createMemo,
+    getMemoList,
 };

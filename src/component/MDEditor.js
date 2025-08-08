@@ -11,7 +11,7 @@ import gfm from '@bytemd/plugin-gfm'
 import mediumZoom from '@bytemd/plugin-medium-zoom'
 import gemoji from '@bytemd/plugin-gemoji'
 import frontmatter from '@bytemd/plugin-frontmatter'
-import { Editor, Viewer } from '@bytemd/react'
+import { Editor } from '@bytemd/react'
 import imagePlugin   from '@/plugins/image'
 import rehypeExternalLinks from '@/plugins/external-link'
 import { create, BaseDirectory, exists, mkdir} from '@tauri-apps/plugin-fs';

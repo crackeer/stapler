@@ -1,5 +1,5 @@
 'use client'
-import React from 'react';
+import { useEffect } from 'react';
 import 'bytemd/dist/index.css'
 import 'highlight.js/styles/default.css'
 import 'katex/dist/katex.css'
@@ -11,13 +11,18 @@ import mediumZoom from '@bytemd/plugin-medium-zoom'
 import gemoji from '@bytemd/plugin-gemoji'
 import frontmatter from '@bytemd/plugin-frontmatter'
 import {  Viewer } from '@bytemd/react'
+import imagePlugin   from '@/plugins/image'
 
-const plugins = [
+let plugins = [
     gfm(), highlight(), gemoji(), frontmatter(), mediumZoom(), rehypeExternalLinks()
 ]
 
 export default function MDViewer({
     value,
+    baseDir,
 }) {
-    return <Viewer value={props.value} plugins={[ ...plugins]} />   
+    useEffect(() => {
+        plugins = [...plugins, imagePlugin(baseDir)]
+    }, [baseDir])
+    return <Viewer value={value} plugins={[ ...plugins]} />   
 }

@@ -18,3 +18,8 @@ h3 {
 .bytemd-editor .CodeMirror .CodeMirror-lines {
     max-width: -1!important;
 }
+img {
+    max-width: 40% !important;
+    margin: 10px auto;
+    display: block;
+}
