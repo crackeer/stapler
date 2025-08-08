@@ -6,7 +6,7 @@ import {
     Table,
 } from "@arco-design/web-react";
 import { getK3sAPIResource } from './action'
-
+import dayjs from "dayjs";
 export default function K3sPod({
     server,
     namespace,
@@ -15,12 +15,12 @@ export default function K3sPod({
     const columns = [
         {
             'title': '名字',
-            'dataIndex': 'name',
+            'dataIndex': 'metadata.name',
             'key': 'name',
         },
         {
             'title': 'STATUS',
-            'dataIndex': 'status',
+            'dataIndex': 'status.phase',
             'key': 'status',
             sorter: (a, b) => {
                 if (a.status == b.status) {
@@ -44,47 +44,34 @@ export default function K3sPod({
                 {
                     text: 'Completed',
                     value: 'Completed',
+                },
+                {
+                    text: 'Succeeded',
+                    value: 'Succeeded',
                 }
             ],
-            defaultFilters: ['Running'],
-            onFilter: (value, row) => row.status == value,
+            defaultFilters: [],
+            onFilter: (value, row) => row.status.phase == value,
         },
+
         {
-            'title': 'restarts',
-            'dataIndex': 'restarts',
-            'key': 'restarts',
-            sorter: (a, b) => {
-                if (a.restarts == b.restarts) {
-                    return a.name.localeCompare(b.name);
-                }
-                return parseInt(a.restarts) > parseInt(b.restarts) ? -1 : 1;
-            }
-        },
-        {
-            'title': 'AGE',
-            'dataIndex': 'age',
-            'key': 'age',
-        },
-        {
-            'title': 'IP',
-            'dataIndex': 'ip',
+            'title': 'hostIP',
+            'dataIndex': 'status.hostIP',
             'key': 'ip',
         },
         {
-            'title': 'Node',
-            'dataIndex': 'node',
-            'key': 'node',
+            'title': 'podIP',
+            'dataIndex': 'status.podIP',
+            'key': 'pod_ip',
         },
         {
-            'title': 'NOMINATED_NOD',
-            'dataIndex': 'NOMINATED_NOD',
-            'key': 'NOMINATED_NOD',
+            'title': '创建时间',
+            'key': 'create_time',
+            'render': (col, record, index) => {
+                return dayjs(record.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm:ss')
+            }
         },
-        {
-            'title': 'READINESS_GATES',
-            'dataIndex': 'READINESS_GATES',
-            'key': 'READINESS_GATES',
-        },
+
         {
             'title': '操作',
             'key': 'opt',
@@ -104,11 +91,11 @@ export default function K3sPod({
 
     const getList = async () => {
         setLoading(true)
-        let result = await getK3sPods(server, namespace)
+        let result = await getK3sAPIResource(server, namespace, 'pod')
         console.log(result)
         setLoading(false)
         setList(result)
     }
 
-    return <Table columns={columns} data={list} loading={loading} pagination={false} />
+    return <Table columns={columns} data={list} loading={loading} pagination={false} rowKey={record => record.metadata.uid} />
 }

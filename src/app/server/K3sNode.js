@@ -96,8 +96,6 @@ export default function K3sNode({
                         </Col>
                     </Row>
                 </Card>
-
-
             })
         }
     </>

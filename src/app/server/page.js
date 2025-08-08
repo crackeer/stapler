@@ -152,7 +152,7 @@ export default function App() {
                 <TabPane key='8' title='文件管理'>
                     <FileManage servers={selectServer} initialDir={'/tmp'}/>
                 </TabPane>
-                <TabPane key='9' title='k3s'>
+                <TabPane key='9' title='k3s信息'>
                     <K3s servers={selectServer} />
                 </TabPane>
             </Tabs>

@@ -17,6 +17,7 @@ import lodash, { set } from 'lodash'
 import K3sNode from "./K3sNode";
 import K3sDeploy from "./K3sDeploy";
 import K3sPod from "./K3sPod";
+import K3sSvc from "./K3sSvc";
 const TabPane = Tabs.TabPane;
 const { Row, Col } = Grid;
 
@@ -87,8 +88,11 @@ export default function K3s({
                 <TabPane key='tab1' title='Deployment'>
                     <K3sDeploy server={currentServer} namespace={namespace} />
                 </TabPane>
+                <TabPane key='tab3' title='Service'>
+                    <K3sSvc server={currentServer} namespace={namespace} />
+                </TabPane>
                 <TabPane key='tab2' title='Pod'>
-                    
+                    <K3sPod server={currentServer} namespace={namespace} />
                 </TabPane>
             </Tabs>
 
