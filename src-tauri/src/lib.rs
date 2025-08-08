@@ -16,7 +16,7 @@ use rust_box::tauri::command::{
 
 use rust_box::tauri::command::file::{
     create_dir, create_file, delete_dir, delete_file, file_exists, get_file_content, list_folder,
-    rename_file, write_file, write_media_file, create_jsonp_file,
+    rename_file, write_file, write_blob_file, create_jsonp_file,
 };
 use rust_box::tauri::command::webview::eval_js_on_page;
 use rust_box::tauri::command::work::write_rsvr_jsonp_asset;
@@ -42,7 +42,7 @@ pub fn run() {
             write_file,
             list_folder,
             set_window_title,
-            write_media_file,
+            write_blob_file,
             create_dir,
             create_file,
             delete_file,

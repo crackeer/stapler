@@ -38,10 +38,9 @@ var setWindowTitle = async (title) => {
     return result;
 };
 
-var uploadFile = async (dir, name, content) => {
-    let result = await invoke("write_media_file", {
-        dir: dir,
-        name: name,
+var uploadBlobFile = async (file, content) => {
+    let result = await invoke("write_blob_file", {
+        filePath: file,
         content: content,
     });
     return result;
@@ -312,7 +311,7 @@ export {
     readDir,
     simpleReadDir,
     setWindowTitle,
-    uploadFile,
+    uploadBlobFile,
     createFile,
     createDir,
     deleteFile,
@@ -355,7 +354,7 @@ export default {
     readDir,
     simpleReadDir,
     setWindowTitle,
-    uploadFile,
+    uploadBlobFile,
     createFile,
     createDir,
     deleteFile,

@@ -236,6 +236,23 @@ function splitIntoArray(str, delimiters) {
 
 };
 
+const snapshotSVG = async (target, fileName) => {
+    const el = document.querySelector(target);
+    const result = await snapdom(el, { scale: 2 });
+    let blob = await result.toBlob();
+    try {
+        const str = await blob.text();
+        let data = Array.from( new TextEncoder().encode(str));
+        
+        let write_result = await invoke.uploadBlobFile(fileName, data)
+        return true
+    } catch (e) {
+        console.log(e)
+        return false
+    }
+    
+}
+
 
 export default {
     sortFileList,
@@ -258,7 +275,8 @@ export default {
     extractURLs,
     superDecode,
     formatCommandOutput,
-    splitIntoArray
+    splitIntoArray,
+    snapshotSVG
 };
 export {
     sortFileList,
@@ -281,5 +299,6 @@ export {
     extractURLs,
     superDecode,
     formatCommandOutput,
-    splitIntoArray
+    splitIntoArray,
+    snapshotSVG
 };

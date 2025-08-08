@@ -1,6 +1,6 @@
 import invoke from "@/util/invoke";
 import { basename } from '@tauri-apps/api/path'
-import { sleep } from "@/util/common";
+import common, { sleep } from "@/util/common";
 import { join } from '@tauri-apps/api/path'
 export const connectServer = async (server) => {
     return await invoke.sshConnectByPassword(server.server, server.port, server.user, server.password, server.id + '')
@@ -55,7 +55,7 @@ export const uploadFile = async (server, localFile, remoteDir, updateState) => {
         let remoteFile = remoteDir + '/' + name
         await invoke.uploadRemoteFile(sessionKey, localFile, remoteFile)
         updateState({
-            content : <>
+            content: <>
                 <p>上传文件：{localFile}</p>
                 <p>上传到：{remoteFile}</p>
             </>,
@@ -65,7 +65,7 @@ export const uploadFile = async (server, localFile, remoteDir, updateState) => {
         let finished = false
         do {
             let query = await invoke.getTransferProgress()
-            
+
             if (query.status != 'transferring') {
                 finished = true
             }
@@ -98,7 +98,7 @@ export const downloadFile = async (server, remoteFile, localDir, updateState) =>
         let localFile = await join(localDir, server.title, name)
         await invoke.downloadRemoteFile(sessionKey, localFile, remoteFile)
         updateState({
-            content : <>
+            content: <>
                 <p>下载文件：{remoteFile}</p>
                 <p>下载到：{localFile}</p>
             </>,
@@ -108,7 +108,7 @@ export const downloadFile = async (server, remoteFile, localDir, updateState) =>
         let finished = false
         do {
             let query = await invoke.getTransferProgress()
-            
+
             if (query.status != 'transferring') {
                 finished = true
             }
@@ -182,5 +182,51 @@ export const createDir = async (server, dir) => {
             status: 'failed',
             message: e.message,
         }
+    }
+}
+
+export const getK3sNamespaces = async (server) => {
+    try {
+        let sessionKey = await connectServer(server)
+        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get ns")
+        let lines = common.splitIntoArray(result, ['\n'])
+        let list = common.formatCommandOutput(lines, 1, [
+            'name', 'status', 'age'
+        ])
+        return list
+    } catch (e) {
+        console.log('getK3sNamespaces', e)
+        return []
+    }
+}
+
+
+export const getK3sDeploy = async (server, ns) => {
+    try {
+        let sessionKey = await connectServer(server)
+        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get deploy -owide -n " + ns)
+        let lines = common.splitIntoArray(result, ['\n'])
+        let list = common.formatCommandOutput(lines, 1, [
+            'name', 'ready', 'up-to-date', 'available', 'age', 'containers', 'images', 'selector'
+        ])
+        return list
+    } catch (e) {
+        console.log('getK3sDeploy', e)
+        return []
+    }
+}
+
+export const getK3sPods = async (server, ns) => {
+    try {
+        let sessionKey = await connectServer(server)
+        let result = await invoke.sshExecuteCmd(sessionKey, "kubectl get pods -owide -n " + ns)
+        let lines = common.splitIntoArray(result, ['\n'])
+        let list = common.formatCommandOutput(lines, 1, [
+            'name', 'ready', 'status', 'restarts', 'age', 'ip', 'node', 'NOMINATED_NOD', "READINESS_GATES"
+        ])
+        return list
+    } catch (e) {
+        console.log('getK3sPods', e)
+        return []
     }
 }

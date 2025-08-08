@@ -10,6 +10,7 @@ import UploadFile from './UploadFile'
 import DownloadFile from './DownloadFile'
 import AddServer from "./AddServer";
 import FileManage from "./FileManage";
+import K3s from "./K3s";
 const TabPane = Tabs.TabPane;
 
 export default function App() {
@@ -150,6 +151,9 @@ export default function App() {
                 </TabPane>
                 <TabPane key='8' title='文件管理'>
                     <FileManage servers={selectServer} initialDir={'/tmp'}/>
+                </TabPane>
+                <TabPane key='9' title='k3s'>
+                    <K3s servers={selectServer} />
                 </TabPane>
             </Tabs>
         </Card>
