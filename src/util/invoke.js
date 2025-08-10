@@ -1,6 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { result } from "lodash";
 
+var goLastPage = async () => {
+    let result = await invoke("go_last_page");
+    return result;
+}
+
 var writeFile = async (file, content) => {
     let Result = await invoke("write_file", {
         name: file,
@@ -306,6 +311,7 @@ var openPath = async (path) => {
 };
 
 export {
+    goLastPage,
     writeFile,
     readFile,
     readDir,
@@ -349,6 +355,7 @@ export {
 };
 
 export default {
+    goLastPage,
     writeFile,
     readFile,
     readDir,

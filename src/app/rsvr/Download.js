@@ -21,6 +21,7 @@ import {
 import common from "@/util/common";
 import lodash from "lodash";
 import database from "@/util/database";
+import { update, fetch as fetchPageConfig } from "@/store/PageInit";
 
 const Row = Grid.Row;
 const Col = Grid.Col;
@@ -28,7 +29,9 @@ const RadioGroup = Radio.Group;
 const CheckboxGroup = Checkbox.Group;
 const CubeSizes = ["2048", "4096", "6144"];
 
-const VRPage = () => {
+export default function Download({
+    initValue
+}) {
     const [observerCount, setObserverCount] = useState(0);
     const [downloadList, setDownloadList] = useState([]);
     const [current, setCurrent] = useState("");
@@ -38,28 +41,29 @@ const VRPage = () => {
     const [form] = Form.useForm();
 
     useEffect(() => {
-        database.getPageInitData("work", "default").then((result) => {
-            if (result != null) {
-                console.log(result);
+        console.log("initValue", initValue);
+         fetchPageConfig().then(({download}) => {
+            console.log("download", download);
+            if (download != null) {
                 form.setFieldsValue({
-                    cube_size: result.cube_size,
-                    download_dir: result.download_dir,
-                    download_layers: result.download_layers,
+                    cube_size: download.cube_size,
+                    download_dir: download.download_dir,
+                    download_layers: download.download_layers,
                 });
                 setTimeout(() => {
-                    editor.set(result.work);
-                }, 30);
+                    editor.set(download.work);
+                }, 100);
             } else {
                 form.setFieldValue("cube_size", [CubeSizes[0]]);
                 form.setFieldValue("download_layers", 1);
             }
         });
-        form.setFieldValue("cube_size", [CubeSizes[0]]);
+        
+       
     }, []);
 
     const onJSONEditorReady = (target) => {
         editor = target;
-        console.log("onJSONEditorReady", editor);
     };
 
     const loadJSON = async () => {
@@ -78,7 +82,7 @@ const VRPage = () => {
             let json = JSON.parse(result);
             editor.set(json);
             setCubeSize(json);
-        } catch (e) {}
+        } catch (e) { }
     };
     const onJsonValidate = (json) => {
         if (json == null) return;
@@ -134,6 +138,14 @@ const VRPage = () => {
         }
 
         console.log("downloadLayers", parseInt(downloadLayers));
+        await update({
+            download: {
+                cube_size: cubeSizes,
+                download_dir: downloadDir,
+                download_layers: parseInt(downloadLayers),
+                work: jsonValue,
+            }
+        })
         await database.updatePageInitData(
             "work",
             "default",
@@ -446,7 +458,7 @@ const VRPage = () => {
 
     return (
         <>
-            <Card style={{ marginBottom: "10px" }}>
+            <div style={{ marginBottom: "10px" }}>
                 <Form form={form} labelCol={{ span: 4 }}>
                     <Form.Item field="json" label="work.json">
                         <Row gutter={10}>
@@ -533,7 +545,7 @@ const VRPage = () => {
                         </Space>
                     </Form.Item>
                 </Form>
-            </Card>
+            </div>
             {downloadStatus == "success" ? (
                 <Alert
                     style={{ marginBottom: 20 }}
@@ -572,5 +584,3 @@ const VRPage = () => {
         </>
     );
 };
-
-export default VRPage;

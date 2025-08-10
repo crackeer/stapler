@@ -16,6 +16,10 @@
         "dialog:default",
         "sql:allow-load",
         "sql:default",
-        "sql:allow-execute"
+        "sql:allow-execute",
+        "store:default",
+        "store:allow-load",
+        "store:allow-save",
+        "store:allow-set"
     ]
 }

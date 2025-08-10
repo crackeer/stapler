@@ -1,6 +1,5 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { IconPlus, IconDelete } from "@arco-design/web-react/icon"
 import { Modal, Card, Button, Form, Input, Table, Space, Grid, Tabs, Collapse, Divider, List, Tag, Progress } from "@arco-design/web-react"
 import database from "@/util/database";
 import { confirm, message, open } from "@tauri-apps/plugin-dialog";

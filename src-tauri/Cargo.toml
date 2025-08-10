@@ -39,3 +39,6 @@ scraper = "0.12.0"
 ssh2 = "0.9.4"
 rust_box = { path = "../../rust_box" }
 aws-config = "1.6.2"
+tauri-plugin-store = "2"
+store = "0.1.0-alpha.3"
+toml = "0.5.10"

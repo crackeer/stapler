@@ -1,0 +1,34 @@
+[[menu]]
+id = "web"
+name = "web"
+children = [
+    { id = "json", name = "JSON", path = "/json"},
+    { id = "qrcode", name = "二维码", path = "/web/qrcode"},
+    { id = "http", name = "HTTP请求", path = "/request"},
+    { id = "decode", name = "编解码", path = "/web/tool"},
+    { id = "quickjs", name = "QuickJS", path = "/quickjs"},
+]
+[[menu]]
+id = "storage"
+name = "存储"
+children = [
+    { id = "mysql", name = "MySQL", path = "/mysql"},
+    { id = "redis", name = "Redis", path = "/redis"},
+    { id = "s3", name = "S3", path = "/s3"},
+    { id = "ftp", name = "FTP", path = "/ftp"},
+]
+[[menu]]
+id = "download"
+name = "下载"
+children = [
+    { id = "download", name = "HTTP下载", path = "/download" },
+    { id = "rsVR", name = "RSVR", path = "/rsvr"},
+]
+
+[[menu]]
+id = "server"
+name = "服务器"
+children = [
+    { id = "server", name = "SSH服务器", path = "/server"},
+]
+

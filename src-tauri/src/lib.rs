@@ -1,12 +1,17 @@
+pub mod config;
 use tauri_plugin_sql::{Migration, MigrationKind};
 #[macro_use]
 extern crate rust_box;
 use rust_box::tauri::command::network::get_local_addr;
 use rust_box::tauri::command::ssh::{
-    ssh_connect_by_password, download_remote_file, remote_exec_command, remote_list_files, upload_remote_file, upload_remote_file_sync, get_transfer_remote_progress, exist_ssh_session
+    download_remote_file, exist_ssh_session, get_transfer_remote_progress, remote_exec_command,
+    remote_list_files, ssh_connect_by_password, upload_remote_file, upload_remote_file_sync,
 };
 use rust_box::tauri::command::{
-    ftp::{connect_ftp, disconnect_ftp, ftp_delete_file, ftp_delete_dir, ftp_download_file, ftp_list, ftp_upload_file},
+    ftp::{
+        connect_ftp, disconnect_ftp, ftp_delete_dir, ftp_delete_file, ftp_download_file, ftp_list,
+        ftp_upload_file,
+    },
     http_request::{
         do_http_request, http_download_file, http_download_file_v2, parse_github_ip,
         parse_html_title, parse_js_code,
@@ -15,22 +20,25 @@ use rust_box::tauri::command::{
 };
 
 use rust_box::tauri::command::file::{
-    create_dir, create_file, delete_dir, delete_file, file_exists, get_file_content, list_folder,
-    rename_file, write_file, write_blob_file, create_jsonp_file,
+    create_dir, create_file, create_jsonp_file, delete_dir, delete_file, file_exists,
+    get_file_content, list_folder, rename_file, write_blob_file, write_file,
 };
 use rust_box::tauri::command::webview::eval_js_on_page;
 use rust_box::tauri::command::work::write_rsvr_jsonp_asset;
 
 use rust_box::tauri::command::js::run_js_code;
 use rust_box::tauri::command::opener::open_path;
-use tauri::Window;
-
+use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuItem, SubmenuBuilder, MenuId};
+use tauri::{ Manager, Window, WebviewWindow};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(
             tauri_plugin_sql::Builder::default()
@@ -42,6 +50,7 @@ pub fn run() {
             write_file,
             list_folder,
             set_window_title,
+            go_last_page,
             write_blob_file,
             create_dir,
             create_file,
@@ -80,8 +89,24 @@ pub fn run() {
             get_transfer_remote_progress,
             exist_ssh_session,
         ])
+        .setup(app_set_up).on_menu_event(window_menu_event)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+
+#[tauri::command]
+fn go_last_page(window: Window) -> bool {
+    let mut menu_item_id = String::from("json");
+    if let Ok(item) = config::get_last_menu() {
+        menu_item_id = item.id;
+    }
+    println!("go_last_page: {:?}", menu_item_id);
+    if let Some(item) = config::MENU_MAP.get(menu_item_id.as_str()) {
+        let webview_window = window.get_webview_window("main").unwrap();
+        jump_menu(&webview_window, &item);
+    }
+    true
 }
 
 #[tauri::command]
@@ -108,4 +133,45 @@ fn get_sqlite_migrations() -> Vec<Migration> {
             kind: MigrationKind::Up,
         },
     ]
+}
+
+fn app_set_up(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let mut menu_builder = MenuBuilder::new(app);
+    let first_menu = SubmenuBuilder::new(app, "defaut")
+        .text("quit", "Quit")
+        .build()?;
+    menu_builder = menu_builder.item(&first_menu);
+    for item in &config::CONFIG.menu {
+        let mut submenu = SubmenuBuilder::new(app, item.name.as_str());
+        for item in &item.children {
+            submenu = submenu.text(item.id.as_str(), item.name.as_str());
+        }
+        menu_builder = menu_builder.item(&submenu.build()?);
+    }
+    let menu = menu_builder.build()?;
+    app.set_menu(menu.clone())?;
+    config::set_menu_config_path(app);
+    Ok(())
+}
+
+
+
+fn window_menu_event(app : &tauri::AppHandle, event: MenuEvent) {
+    let menu_id = event.id().0.as_str();
+    let window_webview = app.get_webview_window("main").unwrap();
+    if config::MENU_MAP.contains_key(menu_id) {
+        let menu_item = config::MENU_MAP.get(menu_id).unwrap();
+        config::set_last_menu(menu_item);
+        jump_menu(&window_webview, menu_item);
+        return;
+    }
+
+    match event.id().0.as_str() {
+        &_ => todo!(),
+    }
+}
+
+fn jump_menu(webview: &WebviewWindow, meue_item : &config::MenuItem) {
+    _ = webview.eval(format!("window.location.href = '{}';", meue_item.path));
+    _ = webview.set_title(meue_item.name.as_str());
 }

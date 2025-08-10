@@ -10,6 +10,7 @@ export default class JSONEditor extends Component {
         super(props); // 用于父子组件传值
     }
     async componentDidMount () {
+        console.log("JSONEditor componentDidMount");
         const options = {
             mode: 'code',
             indentation : 4,
@@ -18,10 +19,19 @@ export default class JSONEditor extends Component {
             onChangeText : this.props.onChangeText,
         };
         const JSONEditorX = (await import('jsoneditor')).default
-        this.jsoneditor = new JSONEditorX(this.container, options);
-        this.jsoneditor.set(this.props.json);
+        if(this.jsoneditor == null) {
+             this.jsoneditor = new JSONEditorX(this.container, options);
+             this.jsoneditor.set(this.props.json);
+        
+        }
+       
     }
     componentWillUnmount () {
+        if (this.jsoneditor) {
+            this.jsoneditor.destroy();
+        }
+    }
+    destroy = () => {
         if (this.jsoneditor) {
             this.jsoneditor.destroy();
         }
