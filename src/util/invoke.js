@@ -1,9 +1,21 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { result } from "lodash";
+
+const invoke = async (...args) => {
+    try {
+        return await tauriInvoke(...args)
+    } catch (e) {
+        console.log('invoke exception', e)
+    }
+}
 
 var goLastPage = async () => {
     let result = await invoke("go_last_page");
     return result;
+}
+
+var isDev = async () => {
+    return await invoke('is_dev')
 }
 
 var writeFile = async (file, content) => {
@@ -352,6 +364,7 @@ export {
     getTransferProgress,
     sshExecuteCmd,
     uploadRemoteFileSync,
+    isDev,
 };
 
 export default {
@@ -396,4 +409,5 @@ export default {
     getTransferProgress,
     sshExecuteCmd,
     uploadRemoteFileSync,
+    isDev,
 };

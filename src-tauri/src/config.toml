@@ -32,3 +32,10 @@ children = [
     { id = "server", name = "SSH服务器", path = "/server"},
 ]
 
+[[menu]]
+id = "daily"
+name = "日常"
+children = [
+    { id = "memo", name = "备忘笔记", path = "/memo"},
+]
+

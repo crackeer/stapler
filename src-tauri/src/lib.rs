@@ -28,10 +28,9 @@ use rust_box::tauri::command::work::write_rsvr_jsonp_asset;
 
 use rust_box::tauri::command::js::run_js_code;
 use rust_box::tauri::command::opener::open_path;
-use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuItem, SubmenuBuilder, MenuId};
-use tauri::{ Manager, Window, WebviewWindow};
+use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuId, MenuItem, SubmenuBuilder};
+use tauri::{Manager, WebviewWindow, Window};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-
 
 pub fn run() {
     tauri::Builder::default()
@@ -88,12 +87,13 @@ pub fn run() {
             ssh_connect_by_password,
             get_transfer_remote_progress,
             exist_ssh_session,
+            is_dev,
         ])
-        .setup(app_set_up).on_menu_event(window_menu_event)
+        .setup(app_set_up)
+        .on_menu_event(window_menu_event)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
 
 #[tauri::command]
 fn go_last_page(window: Window) -> bool {
@@ -138,7 +138,13 @@ fn get_sqlite_migrations() -> Vec<Migration> {
 fn app_set_up(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let mut menu_builder = MenuBuilder::new(app);
     let first_menu = SubmenuBuilder::new(app, "defaut")
-        .text("quit", "Quit")
+        .text("quit", "退出")
+        .cut_with_text("剪切")
+        .copy_with_text("复制")
+        .paste_with_text("粘贴")
+        .select_all_with_text("全选")
+        .undo_with_text("撤销")
+        .redo_with_text("恢复")
         .build()?;
     menu_builder = menu_builder.item(&first_menu);
     for item in &config::CONFIG.menu {
@@ -154,9 +160,7 @@ fn app_set_up(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
-
-fn window_menu_event(app : &tauri::AppHandle, event: MenuEvent) {
+fn window_menu_event(app: &tauri::AppHandle, event: MenuEvent) {
     let menu_id = event.id().0.as_str();
     let window_webview = app.get_webview_window("main").unwrap();
     if config::MENU_MAP.contains_key(menu_id) {
@@ -171,7 +175,12 @@ fn window_menu_event(app : &tauri::AppHandle, event: MenuEvent) {
     }
 }
 
-fn jump_menu(webview: &WebviewWindow, meue_item : &config::MenuItem) {
+fn jump_menu(webview: &WebviewWindow, meue_item: &config::MenuItem) {
     _ = webview.eval(format!("window.location.href = '{}';", meue_item.path));
     _ = webview.set_title(meue_item.name.as_str());
+}
+
+#[tauri::command]
+fn is_dev() -> bool {
+    cfg!(debug_assertions) // 开发环境为 true，生产环境为 false
 }
