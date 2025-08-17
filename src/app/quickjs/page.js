@@ -8,9 +8,13 @@ import { dracula } from '@uiw/codemirror-theme-dracula';
 import invoke from '@/util/invoke';
 import database from '@/util/database';
 import cache from '@/util/cache';
-const codeTmpl = `for(var i = 1;i< 10000;i++) {
-    console.log(i)
-}`
+const codeTmpl = `(function run() {
+    let retData = []
+    for(var i = 1;i< 10000;i++) {
+        retData.push(i)
+    }
+    return retData
+})()`
 const Option = Select.Option;
 const Row = Grid.Row;
 const Col = Grid.Col;
@@ -21,21 +25,6 @@ const presetNodePath = [
     '/usr/local/node',
 ]
 
-const setInputNodePath = async (value) => {
-    return await cache.set("run_js_code.node_input_path", value)
-}
-
-const getInputNodePath = async () => {
-    return await cache.get("run_js_code.node_input_path")
-}
-
-const setSelectNodePath = async (value) => {
-    return await cache.set("run_js_code.select_node_path", value)
-}
-
-const getSelectNodePath = async () => {
-    return await cache.get("run_js_code.select_node_path")
-}
 
 export default function App() {
     const [code, setCode] = React.useState(codeTmpl)
@@ -43,33 +32,21 @@ export default function App() {
     const [codeList, setCodeList] = React.useState([])
     const [title, setTitle] = React.useState('')
     const [output, setOutput] = React.useState("")
-    const [nodePath, setNodePath] = React.useState(presetNodePath[0])
-    const [nodePaths, setNodePaths] = React.useState(presetNodePath)
     const [running, setRunning] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     React.useEffect(() => {
         var initSet = async () => {
-            let inputNodePath = await getInputNodePath()
-            if (inputNodePath != null) {
-                setNodePaths([...presetNodePath, inputNodePath])
-            }
-            let selectNodePath = await getSelectNodePath()
-            if (selectNodePath != null) {
-                setNodePath(selectNodePath)
-            }
-
             updateCodeList()
         }
         initSet()
     }, [])
     const updateCodeList = async () => {
-        setLoading(true)
         let codeList = await database.getCodeList()
+        console.log(codeList)
         setCodeList(codeList)
-        setLoading(false)
     }
     const runJsCode = async () => {
-        setOutput([])
+        setOutput('')
         setRunning(true)
         let result = await invoke.runJsCode(nodePath, code)
         setRunning(false)
@@ -79,19 +56,11 @@ export default function App() {
         }
         setOutput(result.data.output)
     }
+
     const onChange = React.useCallback((val, viewUpdate) => {
         setCode(val);
     }, []);
 
-    const changeNodePath = (value) => {
-        for (var i in presetNodePath) {
-            if (value !== presetNodePath[i]) {
-                setInputNodePath(value)
-            }
-        }
-        setSelectNodePath(value)
-        setNodePath(value)
-    }
     const createCode = async () => {
         if (title.length < 1) {
             return
@@ -99,17 +68,8 @@ export default function App() {
         let result = await database.createCode(title, code)
         updateCodeList()
     }
-    const setCurrentCode = async (item) => {
-        let detail = await database.getCode(item.id)
-        if (detail != null) {
-            setCode(detail.content)
-            setCodeID(detail.id)
-        }
-    }
-    const updateCode = async () => {
-        let result = await database.updateCode(codeID, code);
-        Message.success('更新成功');
-        updateCodeList()
+    const resetCode = async () => {
+        setCode(codeTmpl)
     }
     const deleteCode = async (item) => {
         Modal.confirm({
@@ -126,33 +86,43 @@ export default function App() {
             }
         })
     }
+    const changeJsScript = (item) => {
+        setCodeID(item)
+        for (let i = 0; i < codeList.length; i++) {
+            if (codeList[i].id == item) {
+                setCode(codeList[i].content)
+            }
+        }
+    }
     return <div>
         <Row gutter={5}>
-            <Col span={6}>
-                <List
-                    dataSource={codeList}
-                    size='small'
-                    loading={loading}
-                    render={(item, index) => (
-                        <List.Item key={item.id} style={{ background: item.id == codeID ? '#CCCCCC' : '' }} extra={<Link href='#' onClick={deleteCode.bind(null, item)}>删除</Link>}>
-                            <Link href='#' onClick={setCurrentCode.bind(null, item)}>{item.title}</Link>
-                        </List.Item>
-                    )}
-                />
-            </Col>
-            <Col span={18}>
+            <Col span={24}>
+                <div className='mg-b10'>
+                    脚本列表：<Select
+                        placeholder='请选择脚本'
+                        style={{ width: '40%', }}
+                        allowCreate
+                        onChange={changeJsScript}
+                        value={codeID}
+                    >
+                        {
+                            codeList.map(item => {
+                                return <Option key={item.id} value={item.id}>{item.title}</Option>
+                            })
+                        }
+
+                    </Select>
+                </div>
+
                 <CodeMirror
-                    value={code} height="350px" extensions={[javascript({ jsx: true })]}
+                    value={code} height="calc(100vh - 400px)" extensions={[javascript({ jsx: true })]}
                     onChange={onChange}
                     theme={dracula}
                 />
                 <div style={{ margin: '10px 0' }}>
                     <Space>
                         <Button onClick={runJsCode} icon={<IconPlayArrow />} loading={running} type='primary'>运行</Button>
-                        <Button onClick={() => {
-                            setCode('');
-                            setCodeID('');
-                        }} icon={<IconPlus />} type='primary'>新建</Button>
+                        <Button onClick={resetCode} type='primary'>reset</Button>
                         {
                             codeID < 1 ? <Popconfirm
                                 title="请输入名字"
@@ -172,23 +142,8 @@ export default function App() {
                                 </Button>
                             </Popconfirm> : null
                         }
-                        {codeID > 0 ? <Button onClick={updateCode} icon={<IconSave />} type='primary'>更新</Button> : null}
-
                     </Space>
-                    <Select
-                        placeholder='Please select node path'
-                        style={{ width: 345, marginBottom: 20, float: 'right' }}
-                        allowCreate
-                        onChange={changeNodePath}
-                        value={nodePath}
-                    >
-                        {
-                            nodePaths.map(item => {
-                                return <Option key={item} value={item}>{item}</Option>
-                            })
-                        }
 
-                    </Select>
                 </div>
                 <Input.TextArea value={output} rows={10} placeholder="js output"></Input.TextArea>
             </Col>

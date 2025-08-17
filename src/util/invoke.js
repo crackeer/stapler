@@ -236,6 +236,12 @@ var runJsCode = async (nodePath, code) => {
     });
 };
 
+var runQuickJsCode = async (code) => {
+    return await invoke("run_quick_js_code", {
+        code,
+    });
+};
+
 var connectFTPServer = async (host, port, username, password) => {
     return await invoke("connect_ftp", {
         host,
@@ -365,6 +371,7 @@ export {
     sshExecuteCmd,
     uploadRemoteFileSync,
     isDev,
+    runQuickJsCode,
 };
 
 export default {
@@ -410,4 +417,5 @@ export default {
     sshExecuteCmd,
     uploadRemoteFileSync,
     isDev,
+    runQuickJsCode,
 };

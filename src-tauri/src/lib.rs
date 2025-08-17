@@ -26,7 +26,7 @@ use rust_box::tauri::command::file::{
 use rust_box::tauri::command::webview::eval_js_on_page;
 use rust_box::tauri::command::work::write_rsvr_jsonp_asset;
 
-use rust_box::tauri::command::js::run_js_code;
+use rust_box::tauri::command::js::{run_quick_js_code, run_js_code};
 use rust_box::tauri::command::opener::open_path;
 use tauri::menu::{CheckMenuItem, MenuBuilder, MenuEvent, MenuId, MenuItem, SubmenuBuilder};
 use tauri::{Manager, WebviewWindow, Window};
@@ -88,6 +88,7 @@ pub fn run() {
             get_transfer_remote_progress,
             exist_ssh_session,
             is_dev,
+            run_quick_js_code,
         ])
         .setup(app_set_up)
         .on_menu_event(window_menu_event)
