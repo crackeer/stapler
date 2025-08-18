@@ -68,7 +68,12 @@ const FtpPage = () => {
 
     useEffect(() => {
         init();
+        window.addEventListener('beforeunload', () => {
+            console.log('beforeunload')
+            alert('确定要退出吗？')
+        });
         return () => {
+            alert('确定要退出吗？XX')
             invoke.disconnectFTPServer(connectKey)
         }
     }, []);

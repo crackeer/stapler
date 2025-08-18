@@ -7,7 +7,7 @@ import invoke from '@/util/invoke'
 export default function RootLayout({ children }) {
     useEffect(() => {
         invoke.isDev().then(result => {
-            if (result) {
+            if (!result) {
                 window.addEventListener('contextmenu', (e) => {
                     e.preventDefault(); // 阻止默认右键菜单
                 })

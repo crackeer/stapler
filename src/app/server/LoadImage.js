@@ -114,8 +114,6 @@ export default function LoadImage({
 
     const singleLoadImage = async (sessionKey, file) => {
         try {
-
-
             let name = await basename(file)
             await invoke.sshExecuteCmd(sessionKey, "mkdir -p /tmp/stapler/upload_image")
             let remoteFile = "/tmp/stapler/upload_image/" + name
