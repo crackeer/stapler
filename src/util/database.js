@@ -146,6 +146,15 @@ var getMemoList = async (month) => {
     return formatCreateTime(data)
 }
 
+var getCodeList = async () => {
+    let data = await getContentListV1("js");
+    return formatCreateTime(data)
+}
+
+var createCode = async (title, content) => {
+    return await createContent(title, content, "js", "tag");
+}
+
 export default {
     deleteContent,
     getContent,
@@ -159,4 +168,6 @@ export default {
     createServer,
     createMemo,
     getMemoList,
+    getCodeList,
+    createCode,
 };

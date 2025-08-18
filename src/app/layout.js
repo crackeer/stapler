@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import "@/styles/globals.css";
 import "@arco-design/web-react/dist/css/arco.css";
 import invoke from '@/util/invoke'
+
 export default function RootLayout({ children }) {
     useEffect(() => {
         invoke.isDev().then(result => {
