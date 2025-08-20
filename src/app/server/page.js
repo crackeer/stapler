@@ -140,9 +140,6 @@ export default function App() {
                 <TabPane key='6' title='上传文件'>
                     <UploadFile servers={selectServer} />
                 </TabPane>
-                <TabPane key='7' title='下载文件'>
-                    <LoadImage servers={selectServer} />
-                </TabPane>
                 <TabPane key='4' title='下载文件'>
                     <DownloadFile servers={selectServer} />
                 </TabPane>

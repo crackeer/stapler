@@ -54,7 +54,9 @@ export default function UploadFile({
                     server: server,
                     status: 'transferring',
                 })
-                let result = await uploadFile(server, file, remoteDir, updateLast)
+                let name = await basename(file)
+                let remoteFile = remoteDir + '/' + name
+                let result = await uploadFile(server, file, remoteFile, updateLast)
                 updateLast(result)
             }
         }
