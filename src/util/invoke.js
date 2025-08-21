@@ -238,7 +238,7 @@ var runJsCode = async (nodePath, code) => {
 
 var runQuickJsCode = async (code) => {
     return await invoke("run_quick_js_code", {
-        code,
+        scriptCode : code
     });
 };
 

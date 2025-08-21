@@ -33,7 +33,6 @@ export default function App() {
     const [title, setTitle] = React.useState('')
     const [output, setOutput] = React.useState("")
     const [running, setRunning] = React.useState(false)
-    const [loading, setLoading] = React.useState(false)
     React.useEffect(() => {
         var initSet = async () => {
             updateCodeList()
@@ -48,13 +47,10 @@ export default function App() {
     const runJsCode = async () => {
         setOutput('')
         setRunning(true)
-        let result = await invoke.runJsCode(nodePath, code)
+        let result = await invoke.runQuickJsCode(code)
+        console.log(result)
         setRunning(false)
-        if (!result.success) {
-            Message.error(result.message)
-            return
-        }
-        setOutput(result.data.output)
+        setOutput(result)
     }
 
     const onChange = React.useCallback((val, viewUpdate) => {

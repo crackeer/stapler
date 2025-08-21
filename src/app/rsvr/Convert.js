@@ -160,12 +160,8 @@ export default function Convert() {
             let tmpPath = await path.join(relativePath, files[i].name);
             if (files[i].file_type == "file") {
                 if (
-                    files[i].name.endsWith(".json") ||
-                    files[i].name.endsWith(".b3dm") ||
-                    files[i].name.endsWith(".glb") ||
-                    files[i].name.endsWith(".pnts")
-                ) {
-                } else {
+                    files[i].name.endsWith(".at3d") ||
+                    files[i].name.endsWith(".jpg") ){
                     retData.push(tmpPath);
                 }
             } else {
